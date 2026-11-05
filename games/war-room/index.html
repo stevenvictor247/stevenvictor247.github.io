@@ -102,6 +102,15 @@ button{cursor:pointer}
 .sugg .go{flex:none;border:0;border-radius:999px;padding:7px 14px;font-weight:800;font-size:13px;background:var(--ink);color:#fff}
 .sugg .go.used{background:var(--soft);color:var(--mute);cursor:default}
 .sugg .none{padding:14px;color:var(--mute);font-size:14px}
+.pend{display:flex;align-items:center;gap:12px}
+.pend .nm{flex:1;min-width:0}.pend .nm b{display:block;font-size:17px;font-weight:800}.pend .nm small{color:var(--mute);font-size:13px}
+.yq{margin:14px 0 10px;font-size:14px;font-weight:600;color:var(--ink2)}
+.yrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px}
+.yr{border:1px solid var(--line2);background:#fff;border-radius:10px;padding:8px 4px;display:grid;gap:1px;justify-items:center}
+.yr b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}.yr small{font-size:11px;color:var(--mute);font-weight:700;letter-spacing:.02em}
+.yr:hover{background:var(--soft);border-color:var(--ink)}
+.yr.no{opacity:.4;text-decoration:line-through}
+.slt{font-weight:900}
 .say{min-height:22px;margin-top:10px;font-size:14px;font-weight:600;color:var(--ink2);display:flex;gap:8px;align-items:flex-start}
 .say.bad{color:var(--bad)}
 .say svg{flex:none;width:18px;height:18px;margin-top:1px}
@@ -273,7 +282,7 @@ const ROUNDS=7;
 const SLOTS=['QB','RB','RB','WR','WR','TE','FLEX'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MIN_PTS=30;   // a "real" answer for the pool check
-const MIN_PER_POS=3;
+const MIN_PER_SLOT=6;   // every round needs at least this many good answers at its spot
 
 let D,P,FR,TN,COL,LAST;
 let pIdx=[],byName={};
@@ -349,32 +358,32 @@ function teamDecadeProp(f,d){
   const title=nm.length===1?`${nm[0]} · ${d}s`:`${FR[f].nick} · ${d}s`;
   const sub=nm.length>1?`A season with the franchise between ${a} and ${b} (${nm.map(n=>`${n} ${fmtYrs(...names.get(n))}`).join(', ')}).`:`A season he played for them between ${a} and ${b}.`;
   return {k:'td',id:`td${f}_${d}`,title,sub,art:teamBadge(f,'xl'),
-    s:(o,s)=>s.y>=a&&s.y<=b&&s.f.includes(f),
+    s:(o,s)=>s.y>=a&&s.y<=b&&s.f.includes(f),sw:(o,s)=>s.y<a||s.y>b?`${s.y} isn't between ${a} and ${b}`:`he played for the ${tmz(s)} in ${s.y}`,
     why:o=>{const any=o.S.some(s=>s.f.includes(f));return any?`${o.name} played for them, but not between ${a} and ${b}.`:`${o.name} never played for the ${FR[f].nick}${o.y0<1970?' after 1969':''}.`}};
 }
 function teamAnyProp(f){
   return {k:'ta',id:`ta${f}`,title:`Any ${FR[f].nick} season`,sub:`Any season he played for the franchise (1970–${LAST}).`,art:teamBadge(f,'xl'),
-    s:(o,s)=>s.f.includes(f),why:o=>`${o.name} never played for the ${FR[f].nick}${o.y0<1970?' after 1969':''}.`};
+    s:(o,s)=>s.f.includes(f),sw:(o,s)=>`he played for the ${tmz(s)} in ${s.y}`,why:o=>`${o.name} never played for the ${FR[f].nick}${o.y0<1970?' after 1969':''}.`};
 }
 function yearProp(y){return {k:'yr',id:`yr${y}`,title:`The ${y} season`,sub:`His ${y} regular season, for any team.`,art:ico(null,"'"+String(y).slice(2)),
-  s:(o,s)=>s.y===y,why:o=>`${o.name} has no fantasy stats in ${y}.`}}
+  s:(o,s)=>s.y===y,sw:(o,s)=>`this round needs his ${y} season`,why:o=>`${o.name} has no fantasy stats in ${y}.`}}
 function divProp(div){const fs=FR.map((f,i)=>i).filter(i=>FR[i].div===div);
   return {k:'dv',id:`dv${div}`,title:`${div} · since 2002`,sub:`A season for ${fs.map(i=>FR[i].nick).join(', ')} (2002–${LAST}, when the divisions took their current shape).`,art:ico(null,div.replace(/^(AFC|NFC) (.).*/,'$1 $2')),
-  s:(o,s)=>s.y>=2002&&s.f.some(f=>fs.includes(f)),why:o=>`${o.name} never played for an ${div} team from 2002 on.`}}
+  s:(o,s)=>s.y>=2002&&s.f.some(f=>fs.includes(f)),sw:(o,s)=>s.y<2002?`${s.y} is before 2002`:`he played for the ${tmz(s)} in ${s.y}`,why:o=>`${o.name} never played for an ${div} team from 2002 on.`}}
 const GONE=['Baltimore Colts','Boston Patriots','Houston Oilers','Tennessee Oilers','St. Louis Cardinals','Phoenix Cardinals','Los Angeles Raiders','Oakland Raiders','San Diego Chargers','St. Louis Rams','Washington Redskins','Washington Football Team'];
 function goneProp(){const ids=new Set(GONE.map(n=>TN.indexOf(n)).filter(i=>i>=0));
   return {k:'gn',id:'gn',title:'Throwback name',sub:'A season for a team name that no longer exists: Houston or Tennessee Oilers, Baltimore Colts, St. Louis or Phoenix Cardinals, Oakland or LA Raiders, San Diego Chargers, St. Louis Rams, Boston Patriots, Redskins, or Washington Football Team.',art:ico('retro'),
-  s:(o,s)=>s.t.some(t=>ids.has(t)),why:o=>`${o.name} never played under one of those old team names (from 1970 on).`}}
+  s:(o,s)=>s.t.some(t=>ids.has(t)),sw:(o,s)=>`he played for the ${s.t.map(t=>TN[t]).join(' and ')} in ${s.y}`,why:o=>`${o.name} never played under one of those old team names (from 1970 on).`}}
 function rookieProp(){return {k:'rk',id:'rk',title:'Rookie year',sub:'His first NFL season.',art:ico('rookie'),
-  s:(o,s)=>s.y===o.y0,why:o=>o.y0<1970?`${o.name}'s rookie year (${o.y0}) is before 1970.`:`${o.name}'s rookie year was ${o.y0} and he has no fantasy stats that season.`}}
+  s:(o,s)=>s.y===o.y0,sw:(o,s)=>`his rookie year was ${o.y0}`,why:o=>o.y0<1970?`${o.name}'s rookie year (${o.y0}) is before 1970.`:`${o.name}'s rookie year was ${o.y0} and he has no fantasy stats that season.`}}
 function ageProp(min,max){const t=min?`Age ${min} or older`:`Age ${max} or younger`;
   return {k:'ag',id:`ag${min||''}_${max||''}`,title:t,sub:`A season where he was ${min?min+' or older':max+' or younger'} on September 1.`,art:ico('clock'),
   pl:o=>o.bY?null:`We don't have a confirmed birth date for ${o.name}.`,
-  s:(o,s)=>{const a=ageAt(o,s.y);return a!=null&&(min?a>=min:a<=max)},why:o=>`${o.name} had no fantasy season at that age.`}}
+  s:(o,s)=>{const a=ageAt(o,s.y);return a!=null&&(min?a>=min:a<=max)},sw:(o,s)=>`he was ${ageAt(o,s.y)} on September 1, ${s.y}`,why:o=>`${o.name} had no fantasy season at that age.`}}
 function finalProp(){return {k:'fn',id:'fn',title:'The last dance',sub:`His last NFL season, for a player who hasn't played since (nobody who played in ${LAST} or is on a 2026 roster).`,art:ico('wave'),
-  pl:o=>o.act?`${o.name} is on a 2026 roster.`:o.y1>=LAST?`${o.name} played in ${o.y1}, so his last season isn't settled yet.`:null,s:(o,s)=>s.y===o.y1,why:o=>`${o.name}'s last season (${o.y1}) has no fantasy stats.`}}
+  sw:(o,s)=>`his last season was ${o.y1}`,pl:o=>o.act?`${o.name} is on a 2026 roster.`:o.y1>=LAST?`${o.name} played in ${o.y1}, so his last season isn't settled yet.`:null,s:(o,s)=>s.y===o.y1,why:o=>`${o.name}'s last season (${o.y1}) has no fantasy stats.`}}
 function jerseyProp(dg){return {k:'jn',id:`jn${dg}`,title:`Number ends in ${dg}`,sub:`A season (2000 on) when his jersey number ended in ${dg}: #${dg===0?'10, 20, 80…':dg+', 1'+dg+', 8'+dg+'…'}`,art:ico(null,'#'+dg),
-  s:(o,s)=>s.y>=2000&&s.j.some(n=>n%10===dg),why:o=>o.y1<2000?`This one only counts seasons from 2000 on.`:`${o.name} never wore a number ending in ${dg} from 2000 on.`}}
+  s:(o,s)=>s.y>=2000&&s.j.some(n=>n%10===dg),sw:(o,s)=>s.y<2000?`only seasons from 2000 on count`:s.j.length?`he wore #${s.j.join(' and #')} in ${s.y}`:`we don't have his ${s.y} number`,why:o=>o.y1<2000?`This one only counts seasons from 2000 on.`:`${o.name} never wore a number ending in ${dg} from 2000 on.`}}
 function colProp(c){return {k:'co',id:`co${c}`,title:COL[c],sub:'Played college football there. Any school he attended counts, transfers and JUCOs too.',art:ico('cap'),
   pl:o=>o.cs.includes(c)?null:`${o.name} didn't play at ${COL[c]}${o.cs.length?` (${o.cs.map(x=>COL[x]).join(', ')})`:''}.`,s:()=>true}}
 function stateProp(){const ids=new Set(COL.map((n,i)=>/\bState\b/.test(n)?i:-1).filter(i=>i>=0));
@@ -404,12 +413,74 @@ function loyalProp(){return {k:'ly',id:'ly',title:'One-team man',sub:'He has onl
 function monthProp(m){return {k:'bm',id:`bm${m}`,title:`Born in ${MONTHS[m-1]}`,sub:'Birthday in that month (confirmed birth dates only).',art:ico('cal'),
   pl:o=>!o.bM?`We don't have a confirmed birth date for ${o.name}.`:o.bM===m?null:`${o.name} was born in ${MONTHS[o.bM-1]}.`,s:()=>true}}
 
-/* evaluate a player against a prop */
+const tmz=s=>s.f.map(f=>FR[f].nick).join(' and ')||'no current team';
+/* ---- season-stat props (the year you pick has to clear the bar) ---- */
+const TD=l=>l[1]+l[4]+l[7];          // all TDs incl. passing
+const STD=l=>l[4]+l[7];              // rushing + receiving TDs
+const SCR=l=>l[3]+l[6];              // scrimmage yards
+const STAT={
+ q4k:{only:['QB'],t:'4,000-yard passer',d:'A season with 4,000+ passing yards.',a:'4K',f:l=>l[0]>=4000,sh:l=>`${n0(l[0])} passing yards`},
+ q30:{only:['QB'],t:'30 TD passes',d:'A season with 30 or more touchdown passes.',a:'30',f:l=>l[1]>=30,sh:l=>`${l[1]} TD passes`},
+ qint:{only:['QB'],t:'Turnover machine',d:'A season with 20 or more interceptions.',a:'INT',f:l=>l[2]>=20,sh:l=>`${l[2]} interceptions`},
+ qrun:{only:['QB'],t:'Dual threat',d:'A season with 500+ rushing yards.',a:'500',f:l=>l[3]>=500,sh:l=>`${n0(l[3])} rushing yards`},
+ qneg:{only:['QB'],t:'Rough year',d:'A season with more interceptions than touchdown passes (at least 10 INTs).',a:'−',f:l=>l[2]>=10&&l[2]>l[1],sh:l=>`${l[1]} TD passes and ${l[2]} INTs`},
+ qsneak:{only:['QB'],t:'Goal-line QB',d:'A season with 5 or more rushing touchdowns.',a:'5',f:l=>l[4]>=5,sh:l=>`${l[4]} rushing TDs`},
+ qclean:{only:['QB'],t:'Clean sheet',d:'A season with 25+ TD passes and single-digit interceptions.',a:'25:9',f:l=>l[1]>=25&&l[2]<10,sh:l=>`${l[1]} TD passes and ${l[2]} INTs`},
+ r15:{only:['RB'],t:'1,500-yard rusher',d:'A season with 1,500+ rushing yards.',a:'1.5K',f:l=>l[3]>=1500,sh:l=>`${n0(l[3])} rushing yards`},
+ rrec:{only:['RB'],t:'Pass-catching back',d:'A season with 60 or more catches.',a:'60',f:l=>l[5]>=60,sh:l=>`${l[5]} catches`},
+ rgl:{only:['RB'],t:'Vulture',d:'10+ rushing TDs in a season with under 1,000 rushing yards.',a:'TD',f:l=>l[4]>=10&&l[3]<1000,sh:l=>`${l[4]} rushing TDs on ${n0(l[3])} yards`},
+ rboth:{only:['RB'],t:'Thousand and five',d:'A season with 1,000+ rushing yards and 500+ receiving yards.',a:'1K+',f:l=>l[3]>=1000&&l[6]>=500,sh:l=>`${n0(l[3])} rushing and ${n0(l[6])} receiving yards`},
+ rpass:{only:['RB','WR'],t:'Trick play',d:'A season in which he threw a touchdown pass.',a:'TD',f:l=>l[1]>=1,sh:l=>`no TD passes`},
+ w100:{only:['WR'],t:'100-catch club',d:'A season with 100 or more catches.',a:'100',f:l=>l[5]>=100,sh:l=>`${l[5]} catches`},
+ w14:{only:['WR'],t:'1,400 yards',d:'A season with 1,400+ receiving yards.',a:'1.4K',f:l=>l[6]>=1400,sh:l=>`${n0(l[6])} receiving yards`},
+ w12:{only:['WR'],t:'End-zone magnet',d:'A season with 12 or more touchdown catches.',a:'12',f:l=>l[7]>=12,sh:l=>`${l[7]} TD catches`},
+ wrush:{only:['WR'],t:'Jet sweep',d:'A season in which he ran for a touchdown.',a:'JET',f:l=>l[4]>=1,sh:l=>`no rushing TDs`},
+ wquiet:{only:['WR','TE'],t:'Between the 20s',d:'A season with 70+ catches but 3 or fewer touchdowns.',a:'70',f:l=>l[5]>=70&&l[7]<=3,sh:l=>`${l[5]} catches and ${l[7]} TDs`},
+ t80:{only:['TE'],t:'80-catch tight end',d:'A season with 80 or more catches.',a:'80',f:l=>l[5]>=80,sh:l=>`${l[5]} catches`},
+ t1k:{only:['TE'],t:'1,000-yard tight end',d:'A season with 1,000+ receiving yards.',a:'1K',f:l=>l[6]>=1000,sh:l=>`${n0(l[6])} receiving yards`},
+ t10:{only:['TE'],t:'Red-zone target',d:'A season with 10 or more touchdown catches.',a:'10',f:l=>l[7]>=10,sh:l=>`${l[7]} TD catches`},
+ f16:{only:['RB','WR','TE'],t:'1,600 scrimmage yards',d:'A season with 1,600+ rushing plus receiving yards.',a:'1.6K',f:l=>SCR(l)>=1600,sh:l=>`${n0(SCR(l))} scrimmage yards`},
+ fdd:{only:['RB','WR','TE'],t:'Double digits',d:'A season with 10+ rushing and receiving touchdowns combined.',a:'10',f:l=>STD(l)>=10,sh:l=>`${STD(l)} touchdowns`},
+};
+function statProp(k){const d=STAT[k];return {k:'x'+k,id:'x'+k,only:d.only,title:d.t,sub:d.d,art:ico(null,d.a),s:(o,s)=>d.f(s.l),sw:(o,s)=>`he had ${d.sh(s.l)} in ${s.y}`,why:o=>`${o.name} never had a season like that.`}}
+function exactTdProp(n){return {k:'ex',id:'ex'+n,title:`Exactly ${n} touchdowns`,sub:`A season with exactly ${n} touchdowns: passing, rushing and receiving all count.`,art:ico(null,'='+n),
+  s:(o,s)=>TD(s.l)===n,sw:(o,s)=>`he had ${TD(s.l)} touchdowns in ${s.y}`,why:o=>`${o.name} never had a season with exactly ${n} touchdowns.`}}
+/* Super Bowl champions by season (franchise nickname) */
+const SB={1970:'Colts',1971:'Cowboys',1972:'Dolphins',1973:'Dolphins',1974:'Steelers',1975:'Steelers',1976:'Raiders',1977:'Cowboys',1978:'Steelers',1979:'Steelers',1980:'Raiders',1981:'49ers',1982:'Commanders',1983:'Raiders',1984:'49ers',1985:'Bears',1986:'Giants',1987:'Commanders',1988:'49ers',1989:'49ers',1990:'Giants',1991:'Commanders',1992:'Cowboys',1993:'Cowboys',1994:'49ers',1995:'Cowboys',1996:'Packers',1997:'Broncos',1998:'Broncos',1999:'Rams',2000:'Ravens',2001:'Patriots',2002:'Buccaneers',2003:'Patriots',2004:'Patriots',2005:'Steelers',2006:'Colts',2007:'Giants',2008:'Steelers',2009:'Saints',2010:'Packers',2011:'Giants',2012:'Ravens',2013:'Seahawks',2014:'Patriots',2015:'Broncos',2016:'Patriots',2017:'Eagles',2018:'Patriots',2019:'Chiefs',2020:'Buccaneers',2021:'Rams',2022:'Chiefs',2023:'Chiefs',2024:'Eagles',2025:'Seahawks'};
+const frByNick=n=>FR.findIndex(f=>f.nick===n);
+function sbProp(){return {k:'sb',id:'sb',title:'Ring season',sub:'A season he played for the team that won the Super Bowl that year.',art:ico('star'),
+  s:(o,s)=>SB[s.y]!=null&&s.f.includes(frByNick(SB[s.y])),sw:(o,s)=>`the ${s.y} champion was the ${SB[s.y]==='Commanders'?'Washington team':SB[s.y]}`,why:o=>`${o.name} never played for a Super Bowl winner in a championship season.`}}
+const LEGENDS=['Tom Brady','Jerry Rice','Peyton Manning','Brett Favre','Joe Montana','Dan Marino','Walter Payton','Barry Sanders','Emmitt Smith','Randy Moss','Patrick Mahomes','Travis Kelce','Drew Brees','Aaron Rodgers','LaDainian Tomlinson','Tony Gonzalez','Larry Fitzgerald','John Elway','Marshall Faulk','Terrell Owens'];
+let LEG=null;
+function legendIdx(n){const c=byName[norm(n)];if(!c)return -1;return c.reduce((a,b)=>FAME[b]>FAME[a]?b:a)}
+function mateProp(name){const li=legendIdx(name);const L=decode(li);const set=new Set();for(const s of L.S)for(const f of s.f)set.add(f+':'+s.y);
+  return {k:'tm',id:'tm'+li,title:`Teammate of ${name}`,sub:`A season on the same team as ${name}, in a year he played for them.`,art:photoArt(L),
+   pl:o=>o.i===li?`That's ${name} himself.`:null,
+   s:(o,s)=>s.f.some(f=>set.has(f+':'+s.y)),sw:(o,s)=>`${name} wasn't on his team in ${s.y}`,why:o=>`${o.name} never played on the same team as ${name}.`}}
+function photoArt(o){return `<div style="width:76px;height:76px;margin:0 auto">${photo(o,'xl').replace('ptile xl','ptile xl" style="width:76px;height:76px;border-radius:20px')}</div>`}
+function tradeProp(){return {k:'tr',id:'tr',title:'Traded mid-season',sub:'A season he played for two or more teams.',art:ico('bag'),
+  s:(o,s)=>s.f.length>=2,sw:(o,s)=>`he played for one team in ${s.y}`,why:o=>`${o.name} never switched teams in the middle of a season.`}}
+function capProp(){return {k:'pc',id:'pc',title:'Before the salary cap',sub:'A season from 1993 or earlier.',art:ico('retro'),s:(o,s)=>s.y<=1993,sw:(o,s)=>`${s.y} is after 1993`,why:o=>`${o.name} has no fantasy season before 1994.`}}
+function shortNameProp(){return {k:'sn',id:'sn',title:'Short and sweet',sub:'His last name has 4 letters or fewer, like Bell, Rice or Kupp.',art:ico(null,'Abc'),
+  pl:o=>o.last.replace(/[^A-Za-z]/g,'').length<=4?null:`${o.last} has ${o.last.replace(/[^A-Za-z]/g,'').length} letters.`,s:()=>true}}
+function longNameProp(){return {k:'ln',id:'ln',title:'Spell it out',sub:'His last name has 9 or more letters, like Gronkowski or Tomlinson.',art:ico(null,'A…Z'),
+  pl:o=>o.last.replace(/[^A-Za-z]/g,'').length>=9?null:`${o.last} has ${o.last.replace(/[^A-Za-z]/g,'').length} letters.`,s:()=>true}}
+function firstLetterProp(L){return {k:'fl',id:'fl'+L,title:`First name starts with ${L}`,sub:`His first name begins with ${L}.`,art:ico(null,L+'.'),
+  pl:o=>o.first[0]&&o.first[0].toUpperCase()===L?null:`${o.name}'s first name doesn't start with ${L}.`,s:()=>true}}
+
+/* evaluate a player (any season) and one chosen season */
 function evalPick(o,prop){
   if(prop.pl){const r=prop.pl(o);if(r)return {ok:false,reason:r}}
   let best=null;for(const s of o.S)if(prop.s(o,s)&&(!best||s.p>best.p))best=s;
-  if(!best)return {ok:false,reason:prop.pl&&o.S.length===0?`${o.name} has no fantasy stats from 1970 on.`:(prop.why?prop.why(o):`${o.name} has no fantasy season that fits.`)};
+  if(!best)return {ok:false,reason:o.S.length===0?`${o.name} has no fantasy stats from 1970 on.`:(prop.why?prop.why(o):`${o.name} has no fantasy season that fits.`)};
   return {ok:true,s:best,p:best.p};
+}
+function evalSeason(o,prop,y){
+  if(prop.pl){const r=prop.pl(o);if(r)return {ok:false,reason:r}}
+  const s=o.S.find(x=>x.y===y);if(!s)return {ok:false,reason:`${o.name} has no ${y} stats.`};
+  if(prop.s(o,s))return {ok:true,s,p:s.p};
+  const any=o.S.some(x=>prop.s(o,x));
+  return {ok:false,reason:`Not ${y}: ${prop.sw?prop.sw(o,s):'that season doesn\'t fit'}.${any?' Try another year.':' '+(prop.why?prop.why(o):'')}`.trim()};
 }
 function poolOf(prop){
   const by={QB:[],RB:[],WR:[],TE:[]};
@@ -419,11 +490,12 @@ function poolOf(prop){
 }
 const POOL={};
 function pool(prop){return POOL[prop.id]||(POOL[prop.id]=poolOf(prop))}
-function okPool(prop){const by=pool(prop);return ['QB','RB','WR','TE'].every(k=>by[k].filter(x=>x[1]>=MIN_PTS).length>=MIN_PER_POS)}
+const slotPos=sl=>sl==='FLEX'?['RB','WR','TE']:[sl];
+function okFor(prop,sl){const by=pool(prop);return slotPos(sl).reduce((a,k)=>a+by[k].filter(x=>x[1]>=MIN_PTS).length,0)>=MIN_PER_SLOT}
 
 const BIG_COLS=()=>{const n={};for(const r of P)for(const c of r[3])n[c]=(n[c]||0)+1;return Object.keys(n).map(Number).filter(c=>n[c]>=40)};
 let bigCols=null;
-function makeProp(r,kind){
+function makeProp(r,kind,sl){
   const f=Math.floor(r()*32);
   switch(kind){
     case 'td':{const ds=[1970,1980,1990,2000,2010,2020];return teamDecadeProp(f,pick(r,ds))}
@@ -441,7 +513,6 @@ function makeProp(r,kind){
     case 'cl':return classProp(1980+Math.floor(r()*(LAST-1980)));
     case 'hf':return hofProp();
     case 'np':return noPbProp();
-    case 'aw':return awardProp();
     case 'lt':return letterProp(pick(r,'ABCDGHJMPRSTW'.split('')));
     case 'al':return alliterProp();
     case 'hv':return heavyProp();
@@ -449,32 +520,41 @@ function makeProp(r,kind){
     case 'jy':return journeyProp();
     case 'ly':return loyalProp();
     case 'bm':return monthProp(1+Math.floor(r()*12));
+    case 'sb':return sbProp();
+    case 'tm':return mateProp(pick(r,LEGENDS));
+    case 'tr':return tradeProp();
+    case 'pc':return capProp();
+    case 'sn':return shortNameProp();
+    case 'ln':return longNameProp();
+    case 'fl':return firstLetterProp(pick(r,'ABCDJKMRST'.split('')));
+    case 'ex':return exactTdProp(4+Math.floor(r()*6));
+    case 'stat':{const ks=Object.keys(STAT).filter(k=>STAT[k].only.some(p=>slotPos(sl).includes(p))&&(sl!=='FLEX'||STAT[k].only.length>1));return ks.length?statProp(pick(r,ks)):null}
   }
 }
-const KINDS=[['td',5],['ta',1],['yr',2],['dv',1.2],['gn',.7],['rk',1],['ag',1],['fn',.8],['jn',1.2],['co',2.5],['st',.6],['dr',1.5],['cl',1],['hf',.5],['np',.8],['lt',1],['al',.5],['hv',.6],['tl',.6],['jy',.6],['ly',.7],['bm',.7]];
-const TEAMISH=new Set(['td','ta','dv','gn']);
+const KINDS=[['stat',6],['td',4],['ta',.8],['yr',1.2],['dv',.8],['gn',.7],['rk',1],['ag',.9],['fn',.7],['jn',1],['co',2],['st',.5],['dr',1.2],['cl',.8],['hf',.4],['np',.7],['lt',.6],['al',.5],['hv',.5],['tl',.4],['jy',.5],['ly',.6],['bm',.5],['sb',1],['tm',1.6],['tr',.7],['pc',.6],['sn',.6],['ln',.5],['fl',.5],['ex',.9]];
+const TEAMISH=new Set(['td','ta','dv','gn','sb']);
 function genProps(seed){
-  const r=rng(seed);const out=[];const usedK={};let teamish=0;let guard=0;const usedF=new Set();
-  while(out.length<ROUNDS&&guard++<400){
-    const tot=KINDS.reduce((a,k)=>a+k[1],0);let x=r()*tot,kind=KINDS[0][0];for(const [k,w] of KINDS){if((x-=w)<0){kind=k;break}}
-    if(usedK[kind]&&!(kind==='td'&&usedK[kind]<2))continue;
-    if(TEAMISH.has(kind)&&teamish>=3)continue;
-    const p=makeProp(r,kind);if(!p||out.some(q=>q.id===p.id))continue;
-    const fm=p.id.match(/^t[ad](\d+)/);if(fm&&usedF.has(fm[1]))continue;
-    if(!okPool(p))continue;
-    out.push(p);usedK[kind]=(usedK[kind]||0)+1;if(TEAMISH.has(kind))teamish++;if(fm)usedF.add(fm[1]);
+  const r=rng(seed);const out=[];const usedK={};let teamish=0;const usedF=new Set();
+  for(let k=0;k<ROUNDS;k++){const sl=SLOTS[k];let guard=0,p=null;
+    while(guard++<500){
+      const tot=KINDS.reduce((a,x)=>a+x[1],0);let x=r()*tot,kind=KINDS[0][0];for(const [kk,w] of KINDS){if((x-=w)<0){kind=kk;break}}
+      const cap=kind==='stat'?3:kind==='td'?2:1;
+      if((usedK[kind]||0)>=cap)continue;
+      if(TEAMISH.has(kind)&&teamish>=3)continue;
+      p=makeProp(r,kind,sl);if(!p||out.some(q=>q.id===p.id)){p=null;continue}
+      if(p.only&&!p.only.some(x=>slotPos(sl).includes(x))){p=null;continue}
+      const fm=p.id.match(/^t[ad](\d+)/);if(fm&&usedF.has(fm[1])){p=null;continue}
+      if(!okFor(p,sl)){p=null;continue}
+      usedK[kind]=(usedK[kind]||0)+1;if(TEAMISH.has(kind))teamish++;if(fm)usedF.add(fm[1]);break;
+    }
+    out.push(p);
   }
   const prime=Math.floor(r()*ROUNDS);
   return {props:out,prime};
 }
 
-/* ---------- lineup ---------- */
-function slotFor(lu,pos){
-  for(let k=0;k<SLOTS.length;k++)if(SLOTS[k]===pos&&lu[k]==null)return k;
-  if(pos!=='QB'){const k=SLOTS.indexOf('FLEX');if(lu[k]==null)return k}
-  return -1;
-}
-function openPos(lu){const s=new Set();for(const pos of ['QB','RB','WR','TE'])if(slotFor(lu,pos)>=0)s.add(pos);return s}
+/* ---------- lineup: filled top to bottom, one spot per round ---------- */
+const fitsSlot=(pos,r)=>slotPos(SLOTS[r]).includes(pos);
 
 /* ---------- game state ---------- */
 let G=null;
@@ -492,33 +572,35 @@ function drafter(){if(G.names.length===1)return 0;const first=G.round%2;return G
 function usedSet(){const s=new Set();for(const ps of G.picks)for(const p of ps)if(p&&p.i!=null)s.add(p.i);return s}
 function mult(r){return r===G.prime?2:1}
 
+let PEND=null; // player picked, waiting for his season
+function bad(t){const who=drafter();G.wrong[who]++;save();const say=$('#say');say.className='say bad';say.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg><span>${esc(t)}</span>`;live(t)}
 function choose(i){
-  const o=decode(i);const who=drafter();const prop=props()[G.round];
-  const say=$('#say');
-  const bad=t=>{G.wrong[who]++;save();say.className='say bad';say.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg><span>${esc(t)}</span>`;live(t);};
+  const o=decode(i);const who=drafter();const prop=props()[G.round];const sl=SLOTS[G.round];
   if(G.names.length>1&&usedSet().has(i))return bad(`${o.name} is already on ${G.picks[0].some(p=>p&&p.i===i)?G.names[0]:G.names[1]}'s team.`);
   if(G.picks[who].some(p=>p&&p.i===i))return bad(`${o.name} is already on your team.`);
-  const k=slotFor(G.lu[who],o.pos);
-  if(k<0)return bad(o.pos==='QB'?'Your QB spot is already filled.':`Your ${o.pos} and FLEX spots are filled.`);
-  const e=evalPick(o,prop);
-  if(!e.ok)return bad(e.reason);
+  if(!fitsSlot(o.pos,G.round))return bad(`This round fills your ${sl} spot${sl==='FLEX'?' (RB, WR or TE)':''}. ${o.name} is a ${o.pos}.`);
+  const e=evalPick(o,prop);if(!e.ok)return bad(e.reason);
+  PEND=i;draft();
+}
+function chooseYear(y){
+  const o=decode(PEND);const who=drafter();const prop=props()[G.round];
+  const e=evalSeason(o,prop,y);
+  if(!e.ok){const b=document.querySelector(`.yr[data-y="${y}"]`);if(b)b.classList.add('no');return bad(e.reason)}
   const best=bestAvail(who,prop);
-  const pick={r:G.round,i,y:e.s.y,p:Math.round(e.p*mult(G.round)*10)/10,raw:e.p,k,best};
-  G.lu[who][k]=G.picks[who].length;G.picks[who].push(pick);
-  G.last={who,pick};
+  const pick={r:G.round,i:PEND,y,p:Math.round(e.p*mult(G.round)*10)/10,raw:e.p,k:G.round,best};
+  G.lu[who][G.round]=G.picks[who].length;G.picks[who].push(pick);
+  G.last={who,pick};PEND=null;
   advance();
 }
 function skip(){
-  const who=drafter();const lu=G.lu[who];
-  // a skipped round fills nothing; the slot stays open and the round scores 0
+  const who=drafter();PEND=null;
   G.picks[who].push({r:G.round,i:null,p:0,k:-1,best:bestAvail(who,props()[G.round])});
   G.last={who,pick:G.picks[who][G.picks[who].length-1]};
   advance();
 }
 function bestAvail(who,prop){
-  const open=openPos(G.lu[who]);const used=usedSet();for(const p of G.picks[who])if(p&&p.i!=null)used.add(p.i);
-  const by=pool(prop);let best=null;
-  for(const pos of open){const x=by[pos].find(([i])=>!used.has(i));if(x&&(!best||x[1]>best[1]))best=x}
+  const used=usedSet();const by=pool(prop);let best=null;
+  for(const pos of slotPos(SLOTS[G.round])){const x=by[pos].find(([i])=>!used.has(i));if(x&&(!best||x[1]>best[1]))best=x}
   if(!best)return null;const o=decode(best[0]);const e=evalPick(o,prop);return {i:best[0],y:e.s.y,p:e.p};
 }
 function advance(){
@@ -532,9 +614,9 @@ const total=w=>Math.round(G.picks[w].reduce((a,p)=>a+(p?p.p:0),0)*10)/10;
 function b64e(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)))}
 function packSide(w){return {n:G.names[w],p:G.picks[w].map(p=>p.i==null?[-1]:[p.i,p.y,Math.round(p.p*10)])}}
-function makeCode(obj){return 'WR1.'+b64e(JSON.stringify({b:D.built,...obj}))}
+function makeCode(obj){return 'WR2.'+b64e(JSON.stringify({b:D.built,...obj}))}
 function readCode(str){
-  str=(str||'').trim();const m=str.match(/WR1\.[A-Za-z0-9_-]+/);if(!m)throw new Error('That code doesn\'t look right.');
+  str=(str||'').trim();const m=str.match(/WR([12])\.[A-Za-z0-9_-]+/);if(!m)throw new Error('That code doesn\'t look right.');if(m[1]==='1')throw new Error('That challenge is from an older version of War Room. Ask your friend for a new one.');
   const o=JSON.parse(b64d(m[0].slice(4)));if(typeof o.s!=='number'||!o.a||!Array.isArray(o.a.p))throw new Error('That code is damaged. Ask for the link again.');
   return o;
 }
@@ -600,26 +682,42 @@ function lineupCard(w,title){
   return `<section class="card"><div class="card-h"><h2>${G.names.length>1?`<span class="dot p${w+1}"></span>`:''}${esc(title||'Your lineup')}</h2><span>${total(w).toFixed(1)} pts</span></div><div class="card-b"><ul class="lu">${li}</ul>${sk?`<p class="empty" style="margin:10px 0 0;color:var(--mute);font-size:13px">${sk} round${sk>1?'s':''} skipped (0 pts).</p>`:''}</div></section>`;
 }
 function draft(){
-  const r=G.round;const prop=props()[r];const who=drafter();
-  const open=[...openPos(G.lu[who])];
+  const r=G.round;const prop=props()[r];const who=drafter();const sl=SLOTS[r];
   const turn=G.names.length>1?`<div class="turn p${who+1}">${esc(G.names[who])}'s pick<small>${G.turn===0?'Picks first this round':'Then the next round starts'}</small></div>`:'';
-  app().innerHTML=hud()+turn+propCard(prop,r)+`
-  <section class="card ask" style="margin-top:14px">
+  const need=sl==='FLEX'?'an RB, WR or TE':(sl==='RB'?'an RB':'a '+sl);
+  let ask;
+  if(PEND!=null){const o=decode(PEND);
+    const yrs=o.S.map(s=>`<button class="yr" data-y="${s.y}"><b>${s.y}</b><small>${esc(s.f.map(f=>FR[f].ab).join('/')||'')}</small></button>`).join('');
+    ask=`<section class="card ask" style="margin-top:14px">
+      <div class="pend">${photo(o,'md')}<div class="nm"><b>${esc(o.name)}</b><small>${o.pos} · ${fmtYrs(o.y0,o.y1)}</small></div><button class="tbtn" id="chg">Change player</button></div>
+      <div class="yq">Pick his season. It has to fit the prop, and that season's stats are your score.</div>
+      <div class="yrs" id="yrs">${yrs}</div>
+      <div class="say" id="say" role="status"></div>
+      <div class="ask-f"><span class="hint">Seasons 1970–${LAST} with stats</span><button class="tbtn" id="skipBtn">Skip round (0 pts)</button></div></section>`;
+  }else{
+    ask=`<section class="card ask" style="margin-top:14px">
     <label class="sr" for="q">Search for a player</label>
     <div class="inp"><svg class="mag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
-    <input id="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Draft a QB, RB, WR or TE…" enterkeyhint="go"><button class="clr" id="clr" aria-label="Clear" hidden>×</button></div>
+    <input id="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Draft ${need}…" enterkeyhint="go"><button class="clr" id="clr" aria-label="Clear" hidden>×</button></div>
     <ul class="sugg" id="sugg" hidden></ul>
     <div class="say" id="say" role="status"></div>
-    <div class="ask-f"><span class="hint">Open: ${open.map(p=>p==='RB'||p==='WR'||p==='TE'?p:p).join(', ')||'none'}${G.lu[who][6]==null&&open.length?' (FLEX takes RB, WR or TE)':''}</span><button class="tbtn" id="skipBtn">Skip round (0 pts)</button></div>
-  </section>`+(G.names.length>1?`<div class="lus" style="margin-top:14px">${lineupCard(0,G.names[0])}${lineupCard(1,G.names[1])}</div>`:lineupCard(0));
+    <div class="ask-f"><span class="hint">Filling your <b class="slt ${sl}">${sl}</b> spot${sl==='FLEX'?' (RB, WR or TE)':''}</span><button class="tbtn" id="skipBtn">Skip round (0 pts)</button></div>
+  </section>`}
+  app().innerHTML=hud()+turn+propCard(prop,r)+ask+(G.names.length>1?`<div class="lus" style="margin-top:14px">${lineupCard(0,G.names[0])}${lineupCard(1,G.names[1])}</div>`:lineupCard(0));
+  $('#skipBtn').onclick=e=>{const b=e.currentTarget;if(b.dataset.arm){skip();return}b.dataset.arm='1';b.textContent='Tap again to skip (0 pts)';b.style.color='var(--bad)';setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent='Skip round (0 pts)';b.style.color=''}},4000)};
+  if(PEND!=null){
+    $('#chg').onclick=()=>{PEND=null;draft()};
+    $('#yrs').addEventListener('click',e=>{const b=e.target.closest('.yr');if(b)chooseYear(+b.dataset.y)});
+    const f=$('#yrs .yr');if(f&&matchMedia('(pointer:fine)').matches)f.focus();
+    return;
+  }
   const q=$('#q');q.addEventListener('input',()=>suggest(q.value));
   q.addEventListener('keydown',e=>{const items=[...document.querySelectorAll('#sugg li[data-i]')];let a=items.findIndex(x=>x.classList.contains('act'));
     if(e.key==='ArrowDown'){e.preventDefault();a=Math.min(items.length-1,a+1)}else if(e.key==='ArrowUp'){e.preventDefault();a=Math.max(0,a-1)}
-    else if(e.key==='Enter'){e.preventDefault();const t=items[a>=0?a:0];if(t&&!t.dataset.used)choose(+t.dataset.i);return}else if(e.key==='Escape'){q.value='';suggest('');return}else return;
+    else if(e.key==='Enter'){e.preventDefault();const t=items[a>=0?a:0];if(t&&!t.dataset.used)choose(+t.dataset.i);else if(t)choose(+t.dataset.i);return}else if(e.key==='Escape'){q.value='';suggest('');return}else return;
     items.forEach((x,k)=>x.classList.toggle('act',k===a));});
   $('#clr').onclick=()=>{q.value='';suggest('');q.focus()};
-  $('#skipBtn').onclick=e=>{const b=e.currentTarget;if(b.dataset.arm){skip();return}b.dataset.arm='1';b.textContent='Tap again to skip (0 pts)';b.style.color='var(--bad)';setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent='Skip round (0 pts)';b.style.color=''}},4000)};
-  $('#sugg').addEventListener('click',e=>{const b=e.target.closest('li[data-i]');if(b&&!b.dataset.used)choose(+b.dataset.i)});
+  $('#sugg').addEventListener('click',e=>{const b=e.target.closest('li[data-i]');if(b)choose(+b.dataset.i)});
   if(matchMedia('(pointer:fine)').matches)q.focus();
 }
 function search(qs){
@@ -637,7 +735,8 @@ function suggest(v){
   if(!v||norm(v).length<2){ul.hidden=true;ul.innerHTML='';return}
   const used=usedSet();
   ul.hidden=false;
-  ul.innerHTML=r.length?r.map((i,k)=>{const o=decode(i);const u=used.has(i);return `<li data-i="${i}" ${u?'data-used="1"':''} class="${k===0?'act':''}">${photo(o,'md')}<span class="nm"><b>${esc(o.name)}</b><small>${o.pos} · ${fmtYrs(o.y0,o.y1)}</small></span><button class="go ${u?'used':''}" tabindex="-1">${u?'Taken':'Draft'}</button></li>`}).join(''):`<li class="none">No QB, RB, WR or TE from 1970 on matches “${esc(v)}”.</li>`;
+  const fit=i=>fitsSlot(decode(i).pos,G.round);r.sort((a,b)=>fit(b)-fit(a));
+  ul.innerHTML=r.length?r.map((i,k)=>{const o=decode(i);const u=used.has(i);const nf=!fit(i);const lab=u?'Taken':nf?'Not '+(SLOTS[G.round]==='FLEX'?'FLEX':SLOTS[G.round]):'Draft';return `<li data-i="${i}" ${u||nf?'data-used="1"':''} class="${k===0?'act':''}">${photo(o,'md')}<span class="nm"><b>${esc(o.name)}</b><small>${o.pos} · ${fmtYrs(o.y0,o.y1)}</small></span><button class="go ${u||nf?'used':''}" tabindex="-1">${lab}</button></li>`}).join(''):`<li class="none">No QB, RB, WR or TE from 1970 on matches “${esc(v)}”.</li>`;
 }
 function result(){
   const {who,pick}=G.last;const prop=props()[pick.r];
@@ -645,7 +744,7 @@ function result(){
   let body;
   if(pick.i==null){body=`<div class="res"><div class="who"><div class="nm"><b>Round skipped</b><small>${esc(prop.title)}</small></div><div class="pts"><b>0.0</b><small>PTS</small></div></div>${bestLine(pick)}</div>`}
   else{const o=decode(pick.i);const s=o.S.find(x=>x.y===pick.y);
-    body=`<div class="res"><div class="who">${photo(o,'xl')}<div class="nm"><b>${esc(o.name)}</b><small>${o.pos} · ${pick.y} ${esc(seasonTeams(s))}</small><small>Into your ${SLOTS[pick.k]} spot</small></div><div class="pts"><b>${pick.p.toFixed(1)}</b><small>${pick.r===G.prime?'PTS · 2×':'PTS'}</small></div></div>
+    body=`<div class="res"><div class="who">${photo(o,'xl')}<div class="nm"><b>${esc(o.name)}</b><small>${o.pos} · ${pick.y} ${esc(seasonTeams(s))}</small><small>Your ${SLOTS[pick.k]}</small></div><div class="pts"><b>${pick.p.toFixed(1)}</b><small>${pick.r===G.prime?'PTS · 2×':'PTS'}</small></div></div>
       <div class="line">${statLine(o,s)}</div>${bestLine(pick)}</div>`}
   app().innerHTML=hud()+(G.names.length>1?`<div class="turn p${who+1}">${esc(G.names[who])} drafted</div>`:'')+
    `<section class="card"><div class="card-h"><h2>${esc(prop.title)}</h2><span>Round ${pick.r+1}</span></div>${body}
@@ -724,7 +823,7 @@ function home(msg){
   <section class="card hero" style="margin-top:18px">
     <div class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 12.5h8M8 16h5"/></svg></div>
     <h1>War Room</h1>
-    <p>Seven rounds, seven wild props. Draft a real player who fits each one, and his best season that fits scores fantasy points.</p>
+    <p>Seven rounds, seven wild props. Draft a real player who fits each one, pick his season, and that year's fantasy points are your score.</p>
     <div class="modes">
       ${resume}
       <button class="mode-b pri" id="mSolo"><div class="ico">${I.draft}</div><div><b>Solo draft</b><small>Fresh props every time</small></div><span class="chev">›</span></button>
@@ -737,9 +836,9 @@ function home(msg){
   <section class="card"><div class="card-h"><h2>Have a code?</h2><span>From a friend's challenge</span></div><div class="card-b">
     <div class="codebox"><input id="code" placeholder="Paste a challenge code or link" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="codeGo">Open</button></div><div class="err" id="codeErr" hidden></div></div></section>
   <section class="card"><div class="card-h"><h2>How it works</h2></div><div class="card-b"><ul class="how">
-    <li><span class="n">1</span><span class="t">A prop card flips over<small>Like “Steelers · 1990s”, “Undrafted” or “Number ends in 3”.</small></span></li>
-    <li><span class="n">2</span><span class="t">Draft a QB, RB, WR or TE who fits<small>Fill QB, 2 RB, 2 WR, TE and a FLEX. Plan ahead: every spot needs a player.</small></span></li>
-    <li><span class="n">3</span><span class="t">His best season that fits scores<small>PPR fantasy points, regular seasons 1970–${LAST}. One round each game is worth double.</small></span></li>
+    <li><span class="n">1</span><span class="t">A prop card flips over<small>Like “Teammate of Jerry Rice”, “Ring season” or “Exactly 7 touchdowns”.</small></span></li>
+    <li><span class="n">2</span><span class="t">Draft a player for that round's spot<small>QB, RB, RB, WR, WR, TE, then FLEX, top to bottom.</small></span></li>
+    <li><span class="n">3</span><span class="t">Pick his season<small>The year has to fit the prop. Its PPR fantasy points (1970–${LAST}) are your score. One round is worth double.</small></span></li>
   </ul></div></section>
   <p class="foot">Stats and rosters from the project's verified NFL database (built ${esc(D.built)}). ${n0(P.length)} QBs, RBs, WRs and TEs with fantasy stats since 1970.</p>`;
   if(resume)$('#resume').onclick=()=>{G=saved;G.view=G.view==='end'?'end':G.view;render()};
@@ -769,7 +868,7 @@ function openCode(str){
   if(o.c){ // finished head-to-head: view only
     G={v:1,mode:'ch',seed:o.s,prime:genProps(o.s).prime,round:ROUNDS,turn:0,names:[o.c.n],lu:[Array(SLOTS.length).fill(null)],picks:[o.c.p.map((x,r)=>x[0]<0?{r,i:null,p:0,k:-1}:{r,i:x[0],y:x[1],p:x[2]/10,k:-1})],wrong:[0],done:true,ch:{a:o.a,view:true},view:'end'};
     // rebuild lineup slots for display
-    G.picks[0].forEach((p,pi)=>{if(p.i!=null){const k=slotFor(G.lu[0],decode(p.i).pos);if(k>=0){G.lu[0][k]=pi;p.k=k}}});
+    G.picks[0].forEach((p,pi)=>{if(p.i!=null){G.lu[0][p.r]=pi;p.k=p.r}});
     end();return;
   }
   const a=o.a;const tot=remoteTotal(a);
@@ -786,12 +885,12 @@ function rulesSheet(){
   const ov=$('#ov');
   ov.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rh"><h2 id="rh">How to play</h2>
   <ul class="rules">
-   <li>Each of the <b>7 rounds</b> shows a prop. Draft one real <b>QB, RB, WR or TE</b> who fits it.</li>
-   <li>Your lineup is <b>QB, RB, RB, WR, WR, TE, FLEX</b>. He goes into his position's spot, or FLEX (RB, WR or TE) when that's full. Every prop has at least three good answers at every position, so you can always fill the last spot.</li>
-   <li>He scores his <b>best regular season that fits the prop</b>, from 1970 to ${LAST}. Team props need him to have played for that team that season. Traded mid-season? The whole season counts.</li>
+   <li>Each of the <b>7 rounds</b> shows a prop and fills one spot, in order: <b>QB, RB, RB, WR, WR, TE, FLEX</b> (RB, WR or TE).</li>
+   <li>Draft a real player for that spot who fits the prop, then <b>pick his season</b>. The season has to fit too (for team props he must have played for that team that year), and that season's points are your score. Traded mid-season? The whole season counts.</li>
+   <li>Every prop has at least 6 good answers for its spot, so there's always a pick. Seasons count from 1970 to ${LAST}.</li>
    <li>One round per game is a <b>2× round</b>. It's marked on the round dots and the prop card.</li>
    <li>A pick that doesn't fit is turned away with the reason, and you can try again. You can also skip a round for 0.</li>
-   <li>After each pick you see the <b>best available</b> answer for your open spots.</li>
+   <li>After each pick you see the <b>best available</b> player and season for that spot.</li>
   </ul>
   <h3>Scoring (PPR)</h3>
   <ul class="rules"><li>1 per catch, 1 per 10 rushing or receiving yards, 6 per rushing or receiving TD</li><li>1 per 25 passing yards, 4 per passing TD, −2 per interception</li><li>Fumbles and 2-point conversions aren't counted.</li></ul>
@@ -810,10 +909,10 @@ try{if(window.top===window&&document.referrer!==undefined&&location.pathname.inc
 
 load().then(()=>{
   const h=decodeURIComponent((location.hash||'').slice(1));
-  if(/WR1\./.test(h)){history.replaceState(null,'',location.pathname+location.search);home();openCode(h)}
+  if(/WR[12]\./.test(h)){history.replaceState(null,'',location.pathname+location.search);home();openCode(h)}
   else home();
 }).catch(e=>{app().innerHTML=`<div class="loading"><div><b>Couldn't load the player data</b><div style="color:var(--mute);margin-top:6px">${esc(e.message)}. Check your connection and reload.</div></div></div>`});
-window.__WR={genProps,evalPick,decode,pool,get G(){return G},choose,skip,search,props,okPool,makeProp,rng,KINDS};
+window.__WR={genProps,evalPick,decode,pool,get G(){return G},choose,chooseYear,evalSeason,skip,search,props,okFor,makeProp,rng,KINDS,STAT,SLOTS};
 })();
 </script>
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/games/sw.js',{scope:'/games/'}))</script>
