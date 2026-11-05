@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1e3a8a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Games">
+<link rel="manifest" href="/games/manifest.webmanifest">
+<link rel="icon" href="/games/icons/favicon.png">
+<link rel="apple-touch-icon" href="/games/icons/apple-touch-icon.png">
+<style>[hidden]{display:none!important}.hbtn{white-space:nowrap}</style>
+<meta name="ph-base" content="ph/33bbe714-">
+<title>War Room</title>
+<meta name="description" content="An NFL fantasy draft trivia game. Draft real seasons from wild props, solo or 1v1 against a friend.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>
+/* Same clean trivia-site look as Hand-Off: light grey page, white rounded cards, Inter. */
+:root{
+  --bg:#f2f4f7; --card:#ffffff; --line:#e3e6eb; --line2:#cfd4db; --soft:#f6f7f9;
+  --ink:#151a21; --ink2:#384150; --mute:#687180;
+  --brand:#1e3a8a; --brand-2:#2b4fb8; --brand-soft:#e8eefb;
+  --good:#1d7a43; --good-soft:#e7f3ec;
+  --bad:#d92d20; --bad-soft:#fdecea; --gold:#c98a00; --gold-soft:#fff5db;
+  --p1:#1e3a8a; --p1-soft:#e8eefb; --p2:#b42318; --p2-soft:#fdecea;
+  --r:14px; --f:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid #2f7de1;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:680px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px)) 48px}
+
+.top{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;padding-top:env(safe-area-inset-top,0px)}
+.top .row{max-width:680px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px));height:58px;display:flex;align-items:center;gap:10px}
+.logo{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;font-weight:900;font-size:20px;letter-spacing:-.02em;white-space:nowrap}
+.mk{width:32px;height:32px;border-radius:9px;background:var(--brand);display:grid;place-items:center;flex:none}
+.mk svg{width:20px;height:20px}
+.top .sp{flex:1}
+.hbtn{background:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600;color:var(--ink2);white-space:nowrap;text-decoration:none}
+.hbtn:hover{background:var(--soft)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.card+.card,.hud+.card,.turn+.card{margin-top:14px}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:16px 18px 0}
+.card-h h2{margin:0;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.card-h span{font-size:13px;color:var(--mute);font-weight:600}
+.card-b{padding:14px 18px 18px}
+
+.hud{display:flex;align-items:center;gap:8px;margin:18px 0 12px;flex-wrap:wrap}
+.hud .mode{font-weight:800;font-size:15px;margin-right:auto}
+.hud .mode small{display:block;font-size:12px;font-weight:600;color:var(--mute)}
+.stat{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--ink2)}
+.stat b{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat.p1{border-color:var(--p1);box-shadow:inset 0 0 0 1px var(--p1)}
+.stat.p2{border-color:var(--p2);box-shadow:inset 0 0 0 1px var(--p2)}
+.pips{display:flex;gap:4px}
+.pips i{width:8px;height:8px;border-radius:50%;background:var(--line2)}
+.pips i.on{background:var(--ink)}
+.pips i.x2{background:var(--gold)}
+.pips i.now{outline:2px solid var(--ink);outline-offset:1px}
+
+.turn{display:flex;align-items:center;gap:10px;border-radius:12px;padding:10px 14px;font-weight:800;font-size:15px;color:#fff;margin-bottom:12px}
+.turn.p1{background:var(--p1)}.turn.p2{background:var(--p2)}
+.turn small{font-weight:600;opacity:.85;font-size:13px;margin-left:auto}
+
+/* prop card */
+.prop{padding:20px 18px 18px;text-align:center;position:relative}
+.prop .rd{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.prop .icon{margin:12px auto 10px;width:76px;height:76px}
+.prop h1{margin:0;font-size:28px;font-weight:900;letter-spacing:-.03em;line-height:1.1}
+.prop .sub{margin:8px auto 0;max-width:42ch;color:var(--ink2);font-size:15px}
+.prop .x2{position:absolute;top:14px;right:14px;background:var(--gold-soft);color:var(--gold);font-weight:900;font-size:13px;border-radius:999px;padding:4px 10px;border:1px solid #f3d58a}
+.fits{display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap}
+.fits span{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--soft);color:var(--ink2)}
+.fits span.no{background:transparent;color:#a3aab5;text-decoration:line-through;border:1px dashed var(--line2)}
+.ico{width:76px;height:76px;border-radius:20px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-weight:900;font-size:28px}
+.ico svg{width:46%;height:46%}
+
+/* search */
+.ask{padding:16px 18px 16px}
+.inp{position:relative}
+.inp input{width:100%;height:52px;border:2px solid var(--line2);border-radius:12px;padding:0 44px 0 44px;font-size:17px;font-weight:600;background:#fff;outline:none}
+.inp input:focus{border-color:var(--ink)}
+.inp .mag{position:absolute;left:14px;top:15px;width:22px;height:22px;color:var(--mute)}
+.inp .clr{position:absolute;right:8px;top:8px;width:36px;height:36px;border:0;background:none;border-radius:8px;color:var(--mute);font-size:20px;line-height:1}
+.sugg{list-style:none;margin:8px 0 0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;max-height:360px;overflow-y:auto}
+.sugg li{display:flex;align-items:center;gap:12px;padding:9px 12px;border-top:1px solid var(--line)}
+.sugg li:first-child{border-top:0}
+.sugg li.act{background:var(--soft)}
+.sugg .nm{flex:1;min-width:0}
+.sugg .nm b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sugg .nm small{color:var(--mute);font-size:13px;font-weight:500}
+.sugg .go{flex:none;border:0;border-radius:999px;padding:7px 14px;font-weight:800;font-size:13px;background:var(--ink);color:#fff}
+.sugg .go.used{background:var(--soft);color:var(--mute);cursor:default}
+.sugg .none{padding:14px;color:var(--mute);font-size:14px}
+.say{min-height:22px;margin-top:10px;font-size:14px;font-weight:600;color:var(--ink2);display:flex;gap:8px;align-items:flex-start}
+.say.bad{color:var(--bad)}
+.say svg{flex:none;width:18px;height:18px;margin-top:1px}
+.ask-f{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;padding-top:12px;border-top:1px solid var(--line)}
+.tbtn{background:none;border:0;padding:4px 0;font-size:14px;font-weight:600;color:var(--mute);text-decoration:underline;text-underline-offset:3px}
+.tbtn:hover{color:var(--ink)}
+.ask-f .hint{font-size:13px;color:var(--mute)}
+
+/* result of a pick */
+.res{padding:18px}
+.res .who{display:flex;gap:14px;align-items:center}
+.res .who .nm{min-width:0}
+.res .who b{display:block;font-size:20px;font-weight:900;letter-spacing:-.02em;line-height:1.15}
+.res .who small{display:block;color:var(--mute);font-size:14px;font-weight:600;margin-top:2px}
+.res .pts{margin-left:auto;text-align:right;flex:none}
+.res .pts b{font-size:34px;font-weight:900;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.res .pts small{display:block;font-size:12px;color:var(--mute);font-weight:700}
+.line{margin-top:12px;font-size:14px;color:var(--ink2);background:var(--soft);border-radius:10px;padding:10px 12px}
+.line b{color:var(--ink)}
+.bestc{margin-top:10px;font-size:14px;color:var(--ink2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bestc .tag{font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;background:var(--good-soft);color:var(--good)}
+.bestc .tag.miss{background:var(--gold-soft);color:var(--gold)}
+
+/* lineup */
+.lu{list-style:none;margin:0;padding:0}
+.lu li{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.lu li:first-child{border-top:0;padding-top:0}
+.lu .sl{flex:none;width:46px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:900;letter-spacing:.02em;background:var(--soft);color:var(--ink2)}
+.lu .sl.QB{background:#fde8e8;color:#9b1c1c}.lu .sl.RB{background:#e3f4ea;color:#14532d}.lu .sl.WR{background:#e7eefc;color:#1e3a8a}.lu .sl.TE{background:#fff1dc;color:#92400e}.lu .sl.FLEX{background:#efe9fb;color:#5b21b6}
+.lu .nm{flex:1;min-width:0}
+.lu .nm b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu .nm small{display:block;color:var(--mute);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu .open{color:#a3aab5;font-weight:600;font-size:14px}
+.lu .pt{flex:none;font-weight:800;font-variant-numeric:tabular-nums}
+.lu .pt.z{color:var(--mute)}
+.lu .x2s{font-size:11px;color:var(--gold);font-weight:800;margin-left:4px}
+.lus{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.lus .card{margin-top:0!important}
+.lus .card-h h2{display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.dot.p1{background:var(--p1)}.dot.p2{background:var(--p2)}
+
+/* tiles */
+.ph{background-size:800% 800%;background-repeat:no-repeat;background-color:#e9ecf0;width:100%;height:100%}
+.ph.mono{display:grid;place-items:center;background:linear-gradient(140deg,var(--a),var(--b));color:#fff;font-weight:800;letter-spacing:.02em}
+.ptile{flex:none;border-radius:12px;overflow:hidden;background:#e9ecf0;border:1px solid var(--line)}
+.ptile.xl{width:72px;height:72px}.ptile.xl .mono{font-size:24px}
+.ptile.md{width:40px;height:40px;border-radius:10px}.ptile.md .mono{font-size:14px}
+.ptile.sm{width:30px;height:30px;border-radius:8px}.ptile.sm .mono{font-size:11px}
+.badge{flex:none;border-radius:50%;display:grid;place-items:center;background:var(--bg1);color:var(--fg);box-shadow:inset 0 0 0 3px var(--bg2);font-weight:900;letter-spacing:-.01em}
+.badge.xl{width:76px;height:76px;font-size:22px;box-shadow:inset 0 0 0 5px var(--bg2)}
+
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{flex:1 1 180px;min-height:52px;border-radius:12px;border:2px solid var(--ink);background:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 14px;text-align:center}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover{background:var(--brand-2);border-color:var(--brand-2)}
+.btn:not(.pri):hover{background:var(--soft)}
+.btn small{font-weight:600;font-size:13px;opacity:.8}
+
+/* home */
+.hero{text-align:center;padding:30px 20px 24px}
+.hero .mk{width:64px;height:64px;border-radius:18px;margin:0 auto 14px}
+.hero .mk svg{width:40px;height:40px}
+.hero h1{margin:0;font-size:40px;font-weight:900;letter-spacing:-.035em;line-height:1}
+.hero p{margin:10px auto 22px;max-width:42ch;color:var(--ink2);font-size:16px}
+.modes{display:grid;gap:10px}
+.mode-b{display:flex;align-items:center;gap:14px;text-align:left;width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px 16px}
+.mode-b:hover{background:var(--soft)}
+.mode-b .ico{width:46px;height:46px;border-radius:12px;font-size:16px}
+.mode-b b{display:block;font-size:16px;font-weight:800}
+.mode-b small{display:block;color:var(--mute);font-size:13.5px;font-weight:500}
+.mode-b .chev{margin-left:auto;color:var(--mute);font-size:22px}
+.mode-b.pri{border:2px solid var(--brand)}
+.how{list-style:none;margin:0;padding:0}
+.how li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+.how li:first-child{border-top:0;padding-top:0}
+.how .n{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800}
+.how .t{font-weight:600;font-size:15px}
+.how .t small{display:block;font-weight:500;color:var(--mute);font-size:13.5px}
+.rules{margin:0;padding:0 0 0 18px;color:var(--ink2);font-size:15px}
+.rules li{margin:6px 0}
+.rules b{color:var(--ink)}
+.foot{font-size:12.5px;color:var(--mute);text-align:center;margin:18px auto 0;max-width:58ch}
+.field{display:grid;gap:6px;margin-bottom:12px}
+.field label{font-size:13px;font-weight:700;color:var(--ink2)}
+.field input{height:48px;border:2px solid var(--line2);border-radius:12px;padding:0 14px;font-size:16px;font-weight:600;outline:none}
+.field input:focus{border-color:var(--ink)}
+.codebox{display:flex;gap:8px}
+.codebox input{flex:1;min-width:0;height:46px;border:2px solid var(--line2);border-radius:12px;padding:0 12px;font-size:15px;font-weight:600;outline:none}
+.codebox input:focus{border-color:var(--ink)}
+.codebox button{flex:none;border:0;border-radius:12px;background:var(--ink);color:#fff;font-weight:800;padding:0 16px}
+.err{color:var(--bad);font-size:14px;font-weight:600;margin-top:8px}
+.banner{background:var(--brand-soft);border:1px solid #c8d5f5;color:var(--brand);border-radius:14px;padding:14px 16px;margin-top:18px;font-weight:600;font-size:15px}
+.banner b{color:var(--ink)}
+
+/* end */
+.over{text-align:center;padding:26px 20px 22px}
+.over .k{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.over .big{font-size:72px;font-weight:900;letter-spacing:-.05em;line-height:1;margin:6px 0 0;font-variant-numeric:tabular-nums}
+.over .bl{font-size:16px;font-weight:700;color:var(--ink2)}
+.over .why{margin:12px auto 0;max-width:46ch;color:var(--ink2);font-size:15px}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-top:10px}
+.vs .s{font-size:44px;font-weight:900;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+.vs .s small{display:block;font-size:14px;letter-spacing:0;font-weight:700;color:var(--ink2);margin-top:6px}
+.vs .s.w{color:var(--good)}
+.vs .v{font-weight:800;color:var(--mute)}
+.crown{display:inline-block;margin-top:12px;font-size:14px;font-weight:800;border-radius:999px;padding:5px 14px;background:var(--good-soft);color:var(--good)}
+.rounds{list-style:none;margin:0;padding:0}
+.rounds li{padding:12px 0;border-top:1px solid var(--line)}
+.rounds li:first-child{border-top:0;padding-top:0}
+.rounds .ph2{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--ink2);margin-bottom:8px}
+.rounds .ph2 .x{font-size:11px;color:var(--gold);background:var(--gold-soft);border-radius:999px;padding:1px 7px}
+.rounds .pk{display:flex;align-items:center;gap:10px;padding:3px 0}
+.rounds .pk .nm{flex:1;min-width:0;font-size:14px}
+.rounds .pk .nm b{font-weight:700}
+.rounds .pk .nm small{color:var(--mute)}
+.rounds .pk .pt{font-weight:800;font-variant-numeric:tabular-nums;font-size:14px}
+.rounds .pk .pt.w{color:var(--good)}
+.rounds .bst{font-size:12.5px;color:var(--mute);margin-top:4px}
+.share{font-size:14px;white-space:pre-wrap;word-break:break-all;text-align:left;background:var(--soft);border-radius:12px;padding:12px 14px;margin:14px 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink2)}
+
+.ov{position:fixed;inset:0;background:rgba(15,20,28,.45);z-index:40;display:grid;place-items:center;padding:16px}
+.sheet{background:#fff;border-radius:16px;max-width:540px;width:100%;max-height:90vh;overflow:auto;padding:22px}
+.sheet h2{margin:0 0 6px;font-size:22px;font-weight:900;letter-spacing:-.02em}
+.sheet h3{margin:16px 0 4px;font-size:15px;font-weight:800}
+
+.loading{display:grid;place-items:center;min-height:70vh;text-align:center}
+.loading b{font-size:22px;font-weight:900}
+.bar2{width:180px;height:4px;background:var(--line);border-radius:4px;margin:14px auto 0;overflow:hidden}
+.bar2 i{display:block;height:100%;width:40%;background:var(--brand);border-radius:4px;animation:ld 1.1s ease-in-out infinite}
+@keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:14px;border-radius:999px;padding:10px 18px;z-index:60}
+
+@media (max-width:560px){
+  .card-h{padding:14px 14px 0}.card-b{padding:12px 14px 16px}
+  .ask{padding:14px}.prop{padding:18px 14px 16px}.res{padding:16px 14px}
+  .prop h1{font-size:24px}
+  .lus{grid-template-columns:1fr}
+  .over .big{font-size:60px}
+  .vs .s{font-size:36px}
+  .hbtn .lg{display:none}
+  .hud .mode{flex-basis:100%}
+  .hud .stat{padding:5px 10px}
+  .res .pts b{font-size:28px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<header class="top"><div class="row">
+  <a class="hbtn" id="backBtn" href="../" hidden aria-label="All games">&larr;<span class="lg"> Games</span></a>
+  <button class="logo" id="homeBtn" aria-label="War Room home"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 12.5h8M8 16h5"/></svg></span>War Room</button>
+  <span class="sp"></span>
+  <button class="hbtn" id="rulesBtn">How to play</button>
+</div></header>
+<main class="wrap" id="app">
+  <div class="loading"><div><b>War Room</b><div style="color:var(--mute);font-weight:500;margin-top:6px">Loading every fantasy season since 1970</div><div class="bar2"><i></i></div></div></div>
+</main>
+<div class="ov" id="ov" hidden></div>
+<div class="sr" aria-live="assertive" id="live"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(()=>{
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k,d){try{const v=localStorage.getItem('warroom1:'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('warroom1:'+k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem('warroom1:'+k)}catch(e){}}};
+const PH_BASE=(document.querySelector('meta[name="ph-base"]')||{}).content||'ph/';
+const ROUNDS=7;
+const SLOTS=['QB','RB','RB','WR','WR','TE','FLEX'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MIN_PTS=30;   // a "real" answer for the pool check
+const MIN_PER_POS=3;
+
+let D,P,FR,TN,COL,LAST;
+let pIdx=[],byName={};
+function norm(s){return (s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/&/g,' and ').replace(/['’`.]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+
+/* ---------- colour ---------- */
+function lum(hex){const h=hex.replace('#','');const v=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4));return .2126*v[0]+.7152*v[1]+.0722*v[2]}
+function onColor(hex){return lum(hex)>.42?'#111214':'#ffffff'}
+
+/* ---------- data ---------- */
+function pts(l){return Math.round((l[0]*.04+l[1]*4-2*l[2]+l[3]*.1+l[4]*6+l[5]+l[6]*.1+l[7]*6)*10)/10}
+function decode(i){
+  const r=P[i]; if(r._o) return r._o;
+  const o={i,name:r[0],pos:r[1],ph:r[2],cs:r[3],y0:r[5],y1:r[6],act:r[7],dr:r[8],pb:r[9],hof:r[10],mvp:r[11],opoy:r[12],ht:r[13],wt:r[14],bd:r[15],nfr:r[16]};
+  o.S=r[17].map(([y,f,t,j,l])=>({y,f,t,j,l,p:pts(l)}));
+  const w=o.name.replace(/\s+(Jr\.?|Sr\.?|II|III|IV|V)$/,'').split(/\s+/);
+  o.first=w[0]||'';o.last=w.length>1?w[w.length-1]:w[0];
+  if(o.bd){const [Y,M,Dd]=o.bd.split('-').map(Number);o.bY=Y;o.bM=M;o.bD=Dd}
+  r._o=o; return o;
+}
+function ageAt(o,season){if(!o.bY)return null;let a=season-o.bY;if(o.bM>9||(o.bM===9&&o.bD>1))a--;return a} // age on Sept 1
+const NICK={"megatron":["Calvin Johnson"],"ochocinco":["Chad Johnson"],"beast mode":["Marshawn Lynch"],"beastmode":["Marshawn Lynch"],"sweetness":["Walter Payton"],"the bus":["Jerome Bettis"],"lt":["LaDainian Tomlinson"],"gronk":["Rob Gronkowski"],"tb12":["Tom Brady"],"broadway joe":["Joe Namath"],"the juice":["O.J. Simpson"],"oj":["O.J. Simpson"],"matty ice":["Matt Ryan"],"big ben":["Ben Roethlisberger"],"joe cool":["Joe Montana"],"to":["Terrell Owens"],"cmc":["Christian McCaffrey"],"hollywood":["Marquise Brown"],"ab":["Antonio Brown"],"obj":["Odell Beckham Jr."],"odell beckham":["Odell Beckham Jr."],"bo":["Bo Jackson"],"ad":["Adrian Peterson"],"all day":["Adrian Peterson"],"mike vick":["Michael Vick"],"cj2k":["Chris Johnson"],"superman":["Cam Newton"],"nuk":["DeAndre Hopkins"],"aj":["A.J. Brown"],"cheetah":["Tyreek Hill"],"jjettas":["Justin Jefferson"],"the tyler rose":["Earl Campbell"],"snake":["Ken Stabler"],"the diesel":["John Riggins"],"johnny u":["Johnny Unitas"],"kordell":["Kordell Stewart"],"slash":["Kordell Stewart"],"the playmaker":["Michael Irvin"],"king henry":["Derrick Henry"],"dk":["D.K. Metcalf"],"deebo":["Deebo Samuel Sr."],"ickey":["Ickey Woods"],"the gunslinger":["Brett Favre"],"mahomes":["Patrick Mahomes"],"tom terrific":["Tom Brady"],"the fridge":["William Perry"],"refrigerator":["William Perry"],"fitz":["Larry Fitzgerald"],"jet":["Justin Jefferson"],"jj":["Justin Jefferson"],"sauce":["Sauce Gardner"]};
+function addNS(ks){for(const k of [...ks]){const n=k.replace(/ /g,'');if(n!==k&&!ks.includes(n))ks.push(n)}return ks}
+function lev(a,b,m){if(Math.abs(a.length-b.length)>m)return m+1;let p=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){const c=[i];let lo=i;for(let j=1;j<=b.length;j++){c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));if(c[j]<lo)lo=c[j]}if(lo>m)return m+1;p=c}return p[b.length]}
+function fuzzy(ks,q){const m=q.length>=7?2:1;let best=99;for(const k of ks){if(k.length<3)continue;const d=Math.min(lev(q,k,m),k.length>q.length?lev(q,k.slice(0,q.length),m):99);if(d<best)best=d}return best<=m?-best:null}
+let FAME=[];
+function load(){
+  return fetch('data.json').then(r=>{if(!r.ok)throw new Error('data '+r.status);return r.json()}).then(d=>{
+    D=d;P=d.p;FR=d.fr;TN=d.tn;COL=d.col;LAST=d.last;
+    P.forEach((r,i)=>{const ks=[norm(r[0]),...r[4]];for(const k of [...ks]){const c=k.replace(/\b([a-z]) (?=[a-z]\b)/g,'$1');if(c!==k&&!ks.includes(c))ks.push(c)}pIdx.push(addNS([...new Set(ks)]));
+      (byName[norm(r[0])]=byName[norm(r[0])]||[]).push(i);
+      let best=0;for(const s of r[17]){const v=pts(s[4]);if(v>best)best=v}FAME[i]=best+(r[10]?150:0)+(r[9]||0)*12;});
+    for(const [nk,ns] of Object.entries(NICK))for(const n of ns){const c=byName[norm(n)];if(c){const i=c.reduce((a,b)=>FAME[b]>FAME[a]?b:a);pIdx[i].push(nk)}}
+    buildEraNames();
+  });
+}
+/* franchise names by season, e.g. Titans 1985 -> Houston Oilers */
+let ERA={};
+function buildEraNames(){
+  for(const r of P)for(const s of r[17])if(s[1].length===1&&s[2].length===1){const k=s[1][0]+':'+s[0];(ERA[k]=ERA[k]||{})[s[2][0]]=1}
+}
+function namesFor(f,a,b){const out=new Map();for(let y=a;y<=b;y++){const m=ERA[f+':'+y];if(m)for(const t of Object.keys(m)){const n=TN[t];if(!out.has(n))out.set(n,[y,y]);else out.get(n)[1]=y}}return out}
+
+/* ---------- rng ---------- */
+function rng(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+
+/* ---------- icons ---------- */
+const I={
+ cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+ cap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4.5c3 2.4 8 2.4 11 0v-4.5M21.5 9.5v5"/></svg>',
+ star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/></svg>',
+ draft:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg>',
+ clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+ bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7.5" width="17" height="12" rx="2"/><path d="M9 7.5V5.5h6v2M3.5 12.5h17"/></svg>',
+ heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>',
+ ruler:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg>',
+ retro:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/><path d="M12 8v4l2.5 2.5"/></svg>',
+ rookie:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3 3 4 6.5 4 9.5a4 4 0 0 1-8 0C8 9.5 9 6 12 3z"/><path d="M10 21h4"/></svg>',
+ send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></svg>',
+ wave:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M7 19V9l5-4 5 4v10"/><path d="M10 19v-5h4v5"/></svg>',
+};
+const ico=(k,txt)=>`<div class="ico">${txt!=null?esc(txt):I[k]}</div>`;
+function teamBadge(f,cls){const F=FR[f];return `<div class="badge ${cls||''}" style="--bg1:${F.c1};--bg2:${F.c2};--fg:${onColor(F.c1)}" aria-hidden="true">${esc(F.ab)}</div>`}
+
+/* ---------- props ----------
+ Each prop: title, sub, art(html), s(o,season)->bool (season qualifies), pl(o)->null|reason (player-level), why(o)->reason when no season qualifies.
+ A pick scores the player's best qualifying regular season (1970 on). */
+const fmtYrs=(a,b)=>a===b?String(a):`${a}–${b}`;
+const decadeOf=y=>Math.floor(y/10)*10;
+function teamDecadeProp(f,d){
+  const a=Math.max(d,1970),b=Math.min(d+9,LAST);const names=namesFor(f,a,b);const nm=[...names.keys()];
+  const title=nm.length===1?`${nm[0]} · ${d}s`:`${FR[f].nick} · ${d}s`;
+  const sub=nm.length>1?`A season with the franchise between ${a} and ${b} (${nm.map(n=>`${n} ${fmtYrs(...names.get(n))}`).join(', ')}).`:`A season he played for them between ${a} and ${b}.`;
+  return {k:'td',id:`td${f}_${d}`,title,sub,art:teamBadge(f,'xl'),
+    s:(o,s)=>s.y>=a&&s.y<=b&&s.f.includes(f),
+    why:o=>{const any=o.S.some(s=>s.f.includes(f));return any?`${o.name} played for them, but not between ${a} and ${b}.`:`${o.name} never played for the ${FR[f].nick}${o.y0<1970?' after 1969':''}.`}};
+}
+function teamAnyProp(f){
+  return {k:'ta',id:`ta${f}`,title:`Any ${FR[f].nick} season`,sub:`Any season he played for the franchise (1970–${LAST}).`,art:teamBadge(f,'xl'),
+    s:(o,s)=>s.f.includes(f),why:o=>`${o.name} never played for the ${FR[f].nick}${o.y0<1970?' after 1969':''}.`};
+}
+function yearProp(y){return {k:'yr',id:`yr${y}`,title:`The ${y} season`,sub:`His ${y} regular season, for any team.`,art:ico(null,"'"+String(y).slice(2)),
+  s:(o,s)=>s.y===y,why:o=>`${o.name} has no fantasy stats in ${y}.`}}
+function divProp(div){const fs=FR.map((f,i)=>i).filter(i=>FR[i].div===div);
+  return {k:'dv',id:`dv${div}`,title:`${div} · since 2002`,sub:`A season for ${fs.map(i=>FR[i].nick).join(', ')} (2002–${LAST}, when the divisions took their current shape).`,art:ico(null,div.replace(/^(AFC|NFC) (.).*/,'$1 $2')),
+  s:(o,s)=>s.y>=2002&&s.f.some(f=>fs.includes(f)),why:o=>`${o.name} never played for an ${div} team from 2002 on.`}}
+const GONE=['Baltimore Colts','Boston Patriots','Houston Oilers','Tennessee Oilers','St. Louis Cardinals','Phoenix Cardinals','Los Angeles Raiders','Oakland Raiders','San Diego Chargers','St. Louis Rams','Washington Redskins','Washington Football Team'];
+function goneProp(){const ids=new Set(GONE.map(n=>TN.indexOf(n)).filter(i=>i>=0));
+  return {k:'gn',id:'gn',title:'Throwback name',sub:'A season for a team name that no longer exists: Houston or Tennessee Oilers, Baltimore Colts, St. Louis or Phoenix Cardinals, Oakland or LA Raiders, San Diego Chargers, St. Louis Rams, Boston Patriots, Redskins, or Washington Football Team.',art:ico('retro'),
+  s:(o,s)=>s.t.some(t=>ids.has(t)),why:o=>`${o.name} never played under one of those old team names (from 1970 on).`}}
+function rookieProp(){return {k:'rk',id:'rk',title:'Rookie year',sub:'His first NFL season.',art:ico('rookie'),
+  s:(o,s)=>s.y===o.y0,why:o=>o.y0<1970?`${o.name}'s rookie year (${o.y0}) is before 1970.`:`${o.name}'s rookie year was ${o.y0} and he has no fantasy stats that season.`}}
+function ageProp(min,max){const t=min?`Age ${min} or older`:`Age ${max} or younger`;
+  return {k:'ag',id:`ag${min||''}_${max||''}`,title:t,sub:`A season where he was ${min?min+' or older':max+' or younger'} on September 1.`,art:ico('clock'),
+  pl:o=>o.bY?null:`We don't have a confirmed birth date for ${o.name}.`,
+  s:(o,s)=>{const a=ageAt(o,s.y);return a!=null&&(min?a>=min:a<=max)},why:o=>`${o.name} had no fantasy season at that age.`}}
+function finalProp(){return {k:'fn',id:'fn',title:'The last dance',sub:`His last NFL season, for a player who hasn't played since (nobody who played in ${LAST} or is on a 2026 roster).`,art:ico('wave'),
+  pl:o=>o.act?`${o.name} is on a 2026 roster.`:o.y1>=LAST?`${o.name} played in ${o.y1}, so his last season isn't settled yet.`:null,s:(o,s)=>s.y===o.y1,why:o=>`${o.name}'s last season (${o.y1}) has no fantasy stats.`}}
+function jerseyProp(dg){return {k:'jn',id:`jn${dg}`,title:`Number ends in ${dg}`,sub:`A season (2000 on) when his jersey number ended in ${dg}: #${dg===0?'10, 20, 80…':dg+', 1'+dg+', 8'+dg+'…'}`,art:ico(null,'#'+dg),
+  s:(o,s)=>s.y>=2000&&s.j.some(n=>n%10===dg),why:o=>o.y1<2000?`This one only counts seasons from 2000 on.`:`${o.name} never wore a number ending in ${dg} from 2000 on.`}}
+function colProp(c){return {k:'co',id:`co${c}`,title:COL[c],sub:'Played college football there. Any school he attended counts, transfers and JUCOs too.',art:ico('cap'),
+  pl:o=>o.cs.includes(c)?null:`${o.name} didn't play at ${COL[c]}${o.cs.length?` (${o.cs.map(x=>COL[x]).join(', ')})`:''}.`,s:()=>true}}
+function stateProp(){const ids=new Set(COL.map((n,i)=>/\bState\b/.test(n)?i:-1).filter(i=>i>=0));
+  return {k:'st',id:'st',title:'A "State" school',sub:'His college has the word State in its name: Ohio State, Penn State, Fresno State…',art:ico('cap'),
+  pl:o=>o.cs.some(c=>ids.has(c))?null:`${o.name}'s school${o.cs.length>1?'s':''} (${o.cs.map(x=>COL[x]).join(', ')||'none'}) ${o.cs.length>1?"don't":"doesn't"} have State in the name.`,s:()=>true}}
+const drafted=o=>o.dr&&o.dr.length===3;
+function draftProp(kind){
+  const T={und:['Undrafted','He went undrafted.'],r1:['First-round pick','He was taken in round 1 of the NFL draft.'],t10:['Top-10 pick','He was a top-10 pick in the NFL draft.'],d3:['Round 4 or later','He was drafted in round 4 or later (undrafted doesn\'t count).']}[kind];
+  const test={und:o=>o.dr&&o.dr[0]===0,r1:o=>drafted(o)&&o.dr[1]===1,t10:o=>drafted(o)&&o.dr[1]===1&&o.dr[2]<=10,d3:o=>drafted(o)&&o.dr[1]>=4}[kind];
+  const desc=o=>!o.dr?'his draft status isn\'t clear in our records':o.dr[0]===0?'he went undrafted':`he was a ${o.dr[0]} round ${o.dr[1]} pick (#${o.dr[2]} overall)`;
+  return {k:'dr'+kind,id:'dr'+kind,title:T[0],sub:T[1],art:ico('draft'),pl:o=>test(o)?null:`No: ${desc(o)}.`,s:()=>true};
+}
+function classProp(y){return {k:'cl',id:`cl${y}`,title:`${y} draft class`,sub:`He was drafted in the ${y} NFL draft. Any season counts.`,art:ico('draft'),
+  pl:o=>drafted(o)&&o.dr[0]===y?null:`No: ${!o.dr?'we can\'t confirm his draft year':o.dr[0]===0?o.name+' went undrafted':o.name+' was drafted in '+o.dr[0]}.`,s:()=>true}}
+function hofProp(){return {k:'hf',id:'hf',title:'Hall of Famer',sub:'He is in the Pro Football Hall of Fame (through the class of 2026).',art:ico('star'),pl:o=>o.hof?null:`${o.name} isn't in the Hall of Fame.`,s:()=>true}}
+function noPbProp(){return {k:'np',id:'np',title:'Never a Pro Bowler',sub:'He never made a Pro Bowl.',art:ico(null,'0'),
+  pl:o=>o.pb===0?null:o.pb==null?`We can't confirm ${o.name}'s Pro Bowl record, so he can't be used here.`:`${o.name} made ${o.pb} Pro Bowl${o.pb>1?'s':''}.`,s:()=>true}}
+function awardProp(){return {k:'aw',id:'aw',title:'MVP or OPOY',sub:'He won AP MVP or AP Offensive Player of the Year at least once.',art:ico('star'),pl:o=>(o.mvp||o.opoy)?null:`${o.name} never won AP MVP or Offensive Player of the Year.`,s:()=>true}}
+function letterProp(L){return {k:'lt',id:`lt${L}`,title:`Last name starts with ${L}`,sub:`Like ${L==='S'?'Smith':L+'…'} (as the name appears in the game).`,art:ico(null,L),
+  pl:o=>o.last[0]&&o.last[0].toUpperCase()===L?null:`${o.name}'s last name doesn't start with ${L}.`,s:()=>true}}
+function alliterProp(){return {k:'al',id:'al',title:'Same initials',sub:'First and last name start with the same letter, like Cris Carter or Brandon Bolden.',art:ico(null,'AA'),
+  pl:o=>o.first[0]&&o.last[0]&&o.first[0].toUpperCase()===o.last[0].toUpperCase()&&o.first!==o.last?null:`${o.name}'s initials don't match.`,s:()=>true}}
+function heavyProp(){return {k:'hv',id:'hv',title:'Heavyweight',sub:'Listed at 235 pounds or more.',art:ico('ruler'),pl:o=>o.wt==null?`We don't have a listed weight for ${o.name}.`:o.wt>=235?null:`${o.name} is listed at ${o.wt} lbs.`,s:()=>true}}
+function tallProp(){return {k:'tl',id:'tl',title:`Six-three and up`,sub:'Listed at 6\'3" or taller.',art:ico('ruler'),pl:o=>o.ht==null?`We don't have a listed height for ${o.name}.`:o.ht>=75?null:`${o.name} is listed at ${Math.floor(o.ht/12)}'${o.ht%12}".`,s:()=>true}}
+function journeyProp(){return {k:'jy',id:'jy',title:'Journeyman',sub:'He played for 5 or more franchises.',art:ico('bag'),pl:o=>o.nfr>=5?null:`${o.name} played for ${o.nfr} franchise${o.nfr>1?'s':''}.`,s:()=>true}}
+function loyalProp(){return {k:'ly',id:'ly',title:'One-team man',sub:'He has only ever played for one franchise.',art:ico('heart'),pl:o=>o.nfr===1?null:`${o.name} played for ${o.nfr} franchises.`,s:()=>true}}
+function monthProp(m){return {k:'bm',id:`bm${m}`,title:`Born in ${MONTHS[m-1]}`,sub:'Birthday in that month (confirmed birth dates only).',art:ico('cal'),
+  pl:o=>!o.bM?`We don't have a confirmed birth date for ${o.name}.`:o.bM===m?null:`${o.name} was born in ${MONTHS[o.bM-1]}.`,s:()=>true}}
+
+/* evaluate a player against a prop */
+function evalPick(o,prop){
+  if(prop.pl){const r=prop.pl(o);if(r)return {ok:false,reason:r}}
+  let best=null;for(const s of o.S)if(prop.s(o,s)&&(!best||s.p>best.p))best=s;
+  if(!best)return {ok:false,reason:prop.pl&&o.S.length===0?`${o.name} has no fantasy stats from 1970 on.`:(prop.why?prop.why(o):`${o.name} has no fantasy season that fits.`)};
+  return {ok:true,s:best,p:best.p};
+}
+function poolOf(prop){
+  const by={QB:[],RB:[],WR:[],TE:[]};
+  for(let i=0;i<P.length;i++){const o=decode(i);const e=evalPick(o,prop);if(e.ok)by[o.pos].push([i,e.p])}
+  for(const k in by)by[k].sort((a,b)=>b[1]-a[1]);
+  return by;
+}
+const POOL={};
+function pool(prop){return POOL[prop.id]||(POOL[prop.id]=poolOf(prop))}
+function okPool(prop){const by=pool(prop);return ['QB','RB','WR','TE'].every(k=>by[k].filter(x=>x[1]>=MIN_PTS).length>=MIN_PER_POS)}
+
+const BIG_COLS=()=>{const n={};for(const r of P)for(const c of r[3])n[c]=(n[c]||0)+1;return Object.keys(n).map(Number).filter(c=>n[c]>=40)};
+let bigCols=null;
+function makeProp(r,kind){
+  const f=Math.floor(r()*32);
+  switch(kind){
+    case 'td':{const ds=[1970,1980,1990,2000,2010,2020];return teamDecadeProp(f,pick(r,ds))}
+    case 'ta':return teamAnyProp(f);
+    case 'yr':return yearProp(1975+Math.floor(r()*(LAST-1975+1)));
+    case 'dv':return divProp(pick(r,['AFC East','AFC North','AFC South','AFC West','NFC East','NFC North','NFC South','NFC West']));
+    case 'gn':return goneProp();
+    case 'rk':return rookieProp();
+    case 'ag':return r()<.6?ageProp(30,0):ageProp(0,23);
+    case 'fn':return finalProp();
+    case 'jn':return jerseyProp(Math.floor(r()*10));
+    case 'co':bigCols=bigCols||BIG_COLS();return colProp(pick(r,bigCols));
+    case 'st':return stateProp();
+    case 'dr':return draftProp(pick(r,['und','r1','t10','d3']));
+    case 'cl':return classProp(1980+Math.floor(r()*(LAST-1980)));
+    case 'hf':return hofProp();
+    case 'np':return noPbProp();
+    case 'aw':return awardProp();
+    case 'lt':return letterProp(pick(r,'ABCDGHJMPRSTW'.split('')));
+    case 'al':return alliterProp();
+    case 'hv':return heavyProp();
+    case 'tl':return tallProp();
+    case 'jy':return journeyProp();
+    case 'ly':return loyalProp();
+    case 'bm':return monthProp(1+Math.floor(r()*12));
+  }
+}
+const KINDS=[['td',5],['ta',1],['yr',2],['dv',1.2],['gn',.7],['rk',1],['ag',1],['fn',.8],['jn',1.2],['co',2.5],['st',.6],['dr',1.5],['cl',1],['hf',.5],['np',.8],['lt',1],['al',.5],['hv',.6],['tl',.6],['jy',.6],['ly',.7],['bm',.7]];
+const TEAMISH=new Set(['td','ta','dv','gn']);
+function genProps(seed){
+  const r=rng(seed);const out=[];const usedK={};let teamish=0;let guard=0;const usedF=new Set();
+  while(out.length<ROUNDS&&guard++<400){
+    const tot=KINDS.reduce((a,k)=>a+k[1],0);let x=r()*tot,kind=KINDS[0][0];for(const [k,w] of KINDS){if((x-=w)<0){kind=k;break}}
+    if(usedK[kind]&&!(kind==='td'&&usedK[kind]<2))continue;
+    if(TEAMISH.has(kind)&&teamish>=3)continue;
+    const p=makeProp(r,kind);if(!p||out.some(q=>q.id===p.id))continue;
+    const fm=p.id.match(/^t[ad](\d+)/);if(fm&&usedF.has(fm[1]))continue;
+    if(!okPool(p))continue;
+    out.push(p);usedK[kind]=(usedK[kind]||0)+1;if(TEAMISH.has(kind))teamish++;if(fm)usedF.add(fm[1]);
+  }
+  const prime=Math.floor(r()*ROUNDS);
+  return {props:out,prime};
+}
+
+/* ---------- lineup ---------- */
+function slotFor(lu,pos){
+  for(let k=0;k<SLOTS.length;k++)if(SLOTS[k]===pos&&lu[k]==null)return k;
+  if(pos!=='QB'){const k=SLOTS.indexOf('FLEX');if(lu[k]==null)return k}
+  return -1;
+}
+function openPos(lu){const s=new Set();for(const pos of ['QB','RB','WR','TE'])if(slotFor(lu,pos)>=0)s.add(pos);return s}
+
+/* ---------- game state ---------- */
+let G=null;
+function newGame(mode,opts={}){
+  const seed=opts.seed!=null?opts.seed:(Math.floor(Math.random()*2**31));
+  const {props,prime}=genProps(seed);
+  const names=opts.names||[store.get('name','You')];
+  G={v:1,mode,seed,prime,round:0,turn:0,names,lu:names.map(()=>Array(SLOTS.length).fill(null)),picks:names.map(()=>[]),wrong:names.map(()=>0),last:null,done:false,ch:opts.ch||null,daily:opts.daily||null};
+  G._props=props;
+  save();render();
+}
+function props(){if(!G._props){G._props=genProps(G.seed).props}return G._props}
+function save(){if(!G)return;const c={...G};delete c._props;store.set('game',c)}
+function drafter(){if(G.names.length===1)return 0;const first=G.round%2;return G.turn===0?first:1-first}
+function usedSet(){const s=new Set();for(const ps of G.picks)for(const p of ps)if(p&&p.i!=null)s.add(p.i);return s}
+function mult(r){return r===G.prime?2:1}
+
+function choose(i){
+  const o=decode(i);const who=drafter();const prop=props()[G.round];
+  const say=$('#say');
+  const bad=t=>{G.wrong[who]++;save();say.className='say bad';say.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg><span>${esc(t)}</span>`;live(t);};
+  if(G.names.length>1&&usedSet().has(i))return bad(`${o.name} is already on ${G.picks[0].some(p=>p&&p.i===i)?G.names[0]:G.names[1]}'s team.`);
+  if(G.picks[who].some(p=>p&&p.i===i))return bad(`${o.name} is already on your team.`);
+  const k=slotFor(G.lu[who],o.pos);
+  if(k<0)return bad(o.pos==='QB'?'Your QB spot is already filled.':`Your ${o.pos} and FLEX spots are filled.`);
+  const e=evalPick(o,prop);
+  if(!e.ok)return bad(e.reason);
+  const best=bestAvail(who,prop);
+  const pick={r:G.round,i,y:e.s.y,p:Math.round(e.p*mult(G.round)*10)/10,raw:e.p,k,best};
+  G.lu[who][k]=G.picks[who].length;G.picks[who].push(pick);
+  G.last={who,pick};
+  advance();
+}
+function skip(){
+  const who=drafter();const lu=G.lu[who];
+  // a skipped round fills nothing; the slot stays open and the round scores 0
+  G.picks[who].push({r:G.round,i:null,p:0,k:-1,best:bestAvail(who,props()[G.round])});
+  G.last={who,pick:G.picks[who][G.picks[who].length-1]};
+  advance();
+}
+function bestAvail(who,prop){
+  const open=openPos(G.lu[who]);const used=usedSet();for(const p of G.picks[who])if(p&&p.i!=null)used.add(p.i);
+  const by=pool(prop);let best=null;
+  for(const pos of open){const x=by[pos].find(([i])=>!used.has(i));if(x&&(!best||x[1]>best[1]))best=x}
+  if(!best)return null;const o=decode(best[0]);const e=evalPick(o,prop);return {i:best[0],y:e.s.y,p:e.p};
+}
+function advance(){
+  if(G.names.length>1&&G.turn===0){G.turn=1}else{G.turn=0;G.round++}
+  if(G.round>=ROUNDS){G.done=true}
+  G.view='result';save();render();
+}
+const total=w=>Math.round(G.picks[w].reduce((a,p)=>a+(p?p.p:0),0)*10)/10;
+
+/* ---------- challenge codes ---------- */
+function b64e(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)))}
+function packSide(w){return {n:G.names[w],p:G.picks[w].map(p=>p.i==null?[-1]:[p.i,p.y,Math.round(p.p*10)])}}
+function makeCode(obj){return 'WR1.'+b64e(JSON.stringify({b:D.built,...obj}))}
+function readCode(str){
+  str=(str||'').trim();const m=str.match(/WR1\.[A-Za-z0-9_-]+/);if(!m)throw new Error('That code doesn\'t look right.');
+  const o=JSON.parse(b64d(m[0].slice(4)));if(typeof o.s!=='number'||!o.a||!Array.isArray(o.a.p))throw new Error('That code is damaged. Ask for the link again.');
+  return o;
+}
+function shareURL(code){
+  const inFrame=(()=>{try{return window.top!==window}catch(e){return true}})();
+  if(inFrame||!/^https?:$/.test(location.protocol))return null;
+  return location.origin+location.pathname+'#'+code;
+}
+
+/* ---------- photos ---------- */
+function initials(n){const w=n.replace(/\b(Jr\.?|Sr\.?|II|III|IV)$/,'').split(/\s+/).filter(Boolean);return ((w[0]||'')[0]||'')+((w.length>1?w[w.length-1]:'')[0]||'')}
+function photo(o,cls){
+  if(o.ph>=0){const sheet=Math.floor(o.ph/64),cell=o.ph%64,c=cell%8,r=Math.floor(cell/8);
+    return `<div class="ptile ${cls}"><div class="ph" style="background-image:url(${PH_BASE}s${sheet}.webp);background-position:${(c*100/7).toFixed(4)}% ${(r*100/7).toFixed(4)}%" aria-hidden="true"></div></div>`}
+  const s=o.S.reduce((a,b)=>b.p>a.p?b:a,o.S[0]);const f=s&&s.f.length?FR[s.f[0]]:{c1:'#3c4a5c',c2:'#c9b37e'};
+  return `<div class="ptile ${cls}"><div class="ph mono" style="--a:${f.c1};--b:${f.c2}" aria-hidden="true">${esc(initials(o.name))}</div></div>`;
+}
+function seasonTeams(s){if(!s.t.length)return '';return s.t.map(t=>TN[t]).join(' / ')}
+const n0=x=>x.toLocaleString('en-US');
+function statLine(o,s){
+  const [py,ptd,pi,ry,rtd,rec,recy,rectd]=s.l;const out=[];
+  if(o.pos==='QB'||py>200){out.push(`<b>${n0(py)}</b> pass yds, <b>${ptd}</b> TD, <b>${pi}</b> INT`)}
+  if(ry||rtd)out.push(`<b>${n0(ry)}</b> rush yds, <b>${rtd}</b> TD`);
+  if(rec||recy)out.push(`<b>${rec}</b> rec, <b>${n0(recy)}</b> yds, <b>${rectd}</b> TD`);
+  if(o.pos!=='QB'&&py>0&&py<=200)out.push(`${py} pass yds, ${ptd} TD`);
+  return out.join(' · ');
+}
+function live(t){const l=$('#live');l.textContent='';setTimeout(()=>l.textContent=t,30)}
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>e.hidden=true,2200)}
+function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copied'),()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');toast('Copied')}catch(e){toast('Select and copy the text')}a.remove()})}
+
+/* ---------- views ---------- */
+const app=()=>$('#app');
+function render(){
+  window.scrollTo(0,0);
+  if(!G||G.view==='home'){return home()}
+  if(G.done&&G.view!=='result')return end();
+  if(G.view==='result'&&G.last)return result();
+  return draft();
+}
+function modeLabel(){return {solo:'Solo draft',daily:'Daily draft',pp:'1v1 on this phone',ch:G.ch&&G.ch.a?`Challenge from ${G.ch.a.n}`:'Challenge a friend'}[G.mode]}
+function hud(){
+  const pip=[...Array(ROUNDS)].map((_,r)=>`<i class="${r<G.round?'on':''} ${r===G.prime?'x2':''} ${r===G.round?'now':''}"></i>`).join('');
+  const sc=G.names.length>1?G.names.map((n,w)=>`<div class="stat p${w+1}">${esc(n)} <b>${total(w).toFixed(1)}</b></div>`).join(''):`<div class="stat">Score <b>${total(0).toFixed(1)}</b></div>`;
+  return `<div class="hud"><div class="mode">${esc(modeLabel())}<small>Round ${Math.min(G.round+1,ROUNDS)} of ${ROUNDS}</small></div><div class="stat"><span class="pips" aria-label="Round ${G.round+1} of ${ROUNDS}">${pip}</span></div>${sc}</div>`;
+}
+function propCard(prop,r){
+  return `<section class="card prop" aria-label="Prop">
+    ${r===G.prime?'<span class="x2" title="Points double this round">2× round</span>':''}
+    <div class="rd">Round ${r+1}${r===G.prime?' · double points':''}</div>
+    <div class="icon">${prop.art}</div>
+    <h1>${esc(prop.title)}</h1>
+    <p class="sub">${esc(prop.sub)}</p>
+  </section>`;
+}
+function lineupCard(w,title){
+  const lu=G.lu[w];
+  const li=SLOTS.map((sl,k)=>{const pi=lu[k];
+    if(pi==null)return `<li><span class="sl ${sl}">${sl}</span><span class="nm open">Open</span></li>`;
+    const p=G.picks[w][pi];const o=decode(p.i);const s=o.S.find(x=>x.y===p.y);
+    return `<li><span class="sl ${sl}">${sl}</span>${photo(o,'sm')}<span class="nm"><b>${esc(o.name)}</b><small>${p.y} ${esc(seasonTeams(s))}</small></span><span class="pt">${p.p.toFixed(1)}${p.r===G.prime?'<span class="x2s">2×</span>':''}</span></li>`}).join('');
+  const sk=G.picks[w].filter(p=>p.i==null).length;
+  return `<section class="card"><div class="card-h"><h2>${G.names.length>1?`<span class="dot p${w+1}"></span>`:''}${esc(title||'Your lineup')}</h2><span>${total(w).toFixed(1)} pts</span></div><div class="card-b"><ul class="lu">${li}</ul>${sk?`<p class="empty" style="margin:10px 0 0;color:var(--mute);font-size:13px">${sk} round${sk>1?'s':''} skipped (0 pts).</p>`:''}</div></section>`;
+}
+function draft(){
+  const r=G.round;const prop=props()[r];const who=drafter();
+  const open=[...openPos(G.lu[who])];
+  const turn=G.names.length>1?`<div class="turn p${who+1}">${esc(G.names[who])}'s pick<small>${G.turn===0?'Picks first this round':'Then the next round starts'}</small></div>`:'';
+  app().innerHTML=hud()+turn+propCard(prop,r)+`
+  <section class="card ask" style="margin-top:14px">
+    <label class="sr" for="q">Search for a player</label>
+    <div class="inp"><svg class="mag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+    <input id="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Draft a QB, RB, WR or TE…" enterkeyhint="go"><button class="clr" id="clr" aria-label="Clear" hidden>×</button></div>
+    <ul class="sugg" id="sugg" hidden></ul>
+    <div class="say" id="say" role="status"></div>
+    <div class="ask-f"><span class="hint">Open: ${open.map(p=>p==='RB'||p==='WR'||p==='TE'?p:p).join(', ')||'none'}${G.lu[who][6]==null&&open.length?' (FLEX takes RB, WR or TE)':''}</span><button class="tbtn" id="skipBtn">Skip round (0 pts)</button></div>
+  </section>`+(G.names.length>1?`<div class="lus" style="margin-top:14px">${lineupCard(0,G.names[0])}${lineupCard(1,G.names[1])}</div>`:lineupCard(0));
+  const q=$('#q');q.addEventListener('input',()=>suggest(q.value));
+  q.addEventListener('keydown',e=>{const items=[...document.querySelectorAll('#sugg li[data-i]')];let a=items.findIndex(x=>x.classList.contains('act'));
+    if(e.key==='ArrowDown'){e.preventDefault();a=Math.min(items.length-1,a+1)}else if(e.key==='ArrowUp'){e.preventDefault();a=Math.max(0,a-1)}
+    else if(e.key==='Enter'){e.preventDefault();const t=items[a>=0?a:0];if(t&&!t.dataset.used)choose(+t.dataset.i);return}else if(e.key==='Escape'){q.value='';suggest('');return}else return;
+    items.forEach((x,k)=>x.classList.toggle('act',k===a));});
+  $('#clr').onclick=()=>{q.value='';suggest('');q.focus()};
+  $('#skipBtn').onclick=e=>{const b=e.currentTarget;if(b.dataset.arm){skip();return}b.dataset.arm='1';b.textContent='Tap again to skip (0 pts)';b.style.color='var(--bad)';setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent='Skip round (0 pts)';b.style.color=''}},4000)};
+  $('#sugg').addEventListener('click',e=>{const b=e.target.closest('li[data-i]');if(b&&!b.dataset.used)choose(+b.dataset.i)});
+  if(matchMedia('(pointer:fine)').matches)q.focus();
+}
+function search(qs){
+  const q=norm(qs);if(q.length<2)return [];
+  const out=[];
+  for(let i=0;i<P.length;i++){const ks=pIdx[i];let sc=null;
+    for(const k of ks){if(k===q){sc=3;break}if(k.startsWith(q)){sc=Math.max(sc??0,2)}else if(q.length>=3&&k.includes(' '+q)){sc=Math.max(sc??0,1)}}
+    if(sc!=null)out.push([i,sc])}
+  if(!out.length&&q.length>=4){for(let i=0;i<P.length;i++){const f=fuzzy(pIdx[i],q);if(f!=null)out.push([i,f])}}
+  out.sort((a,b)=>b[1]-a[1]||FAME[b[0]]-FAME[a[0]]);
+  return out.slice(0,8).map(x=>x[0]);
+}
+function suggest(v){
+  const ul=$('#sugg');$('#clr').hidden=!v;const r=search(v);
+  if(!v||norm(v).length<2){ul.hidden=true;ul.innerHTML='';return}
+  const used=usedSet();
+  ul.hidden=false;
+  ul.innerHTML=r.length?r.map((i,k)=>{const o=decode(i);const u=used.has(i);return `<li data-i="${i}" ${u?'data-used="1"':''} class="${k===0?'act':''}">${photo(o,'md')}<span class="nm"><b>${esc(o.name)}</b><small>${o.pos} · ${fmtYrs(o.y0,o.y1)}</small></span><button class="go ${u?'used':''}" tabindex="-1">${u?'Taken':'Draft'}</button></li>`}).join(''):`<li class="none">No QB, RB, WR or TE from 1970 on matches “${esc(v)}”.</li>`;
+}
+function result(){
+  const {who,pick}=G.last;const prop=props()[pick.r];
+  const nextLbl=G.done?'See final results':(G.names.length>1?`${G.names[drafter()]}'s pick`:`Round ${G.round+1}`);
+  let body;
+  if(pick.i==null){body=`<div class="res"><div class="who"><div class="nm"><b>Round skipped</b><small>${esc(prop.title)}</small></div><div class="pts"><b>0.0</b><small>PTS</small></div></div>${bestLine(pick)}</div>`}
+  else{const o=decode(pick.i);const s=o.S.find(x=>x.y===pick.y);
+    body=`<div class="res"><div class="who">${photo(o,'xl')}<div class="nm"><b>${esc(o.name)}</b><small>${o.pos} · ${pick.y} ${esc(seasonTeams(s))}</small><small>Into your ${SLOTS[pick.k]} spot</small></div><div class="pts"><b>${pick.p.toFixed(1)}</b><small>${pick.r===G.prime?'PTS · 2×':'PTS'}</small></div></div>
+      <div class="line">${statLine(o,s)}</div>${bestLine(pick)}</div>`}
+  app().innerHTML=hud()+(G.names.length>1?`<div class="turn p${who+1}">${esc(G.names[who])} drafted</div>`:'')+
+   `<section class="card"><div class="card-h"><h2>${esc(prop.title)}</h2><span>Round ${pick.r+1}</span></div>${body}
+   <div class="card-b" style="padding-top:0"><div class="btns"><button class="btn pri" id="next">${esc(nextLbl)}</button></div></div></section>`+
+   (G.names.length>1?`<div class="lus" style="margin-top:14px">${lineupCard(0,G.names[0])}${lineupCard(1,G.names[1])}</div>`:lineupCard(0));
+  $('#next').onclick=()=>{G.view=G.done?'end':'draft';G.last=null;save();render()};
+  $('#next').focus();
+  live(pick.i==null?'Round skipped':`${decode(pick.i).name}, ${pick.y}, ${pick.p} points`);
+}
+function bestLine(pick){
+  const b=pick.best;if(!b)return '';const o=decode(b.i);const s=o.S.find(x=>x.y===b.y);
+  const m=pick.r===G.prime?2:1;
+  if(pick.i===b.i&&pick.y===b.y)return `<div class="bestc"><span class="tag">Best available</span> You found the top pick for your open spots.</div>`;
+  return `<div class="bestc"><span class="tag miss">Best available</span> ${esc(o.name)}, ${b.y} ${esc(s.t.map(t=>TN[t]).join(' / '))}: ${(Math.round(b.p*m*10)/10).toFixed(1)}</div>`;
+}
+function end(){
+  const multi=G.names.length>1;const ch=G.ch;
+  let head;
+  const rounds=props().map((prop,r)=>{
+    const sides=G.names.map((n,w)=>({n,w,p:G.picks[w].find(p=>p.r===r)}));
+    if(ch&&ch.a){sides.unshift({n:ch.a.n,w:'c',p:remotePick(ch.a,r)})}
+    const mx=Math.max(...sides.map(s=>s.p?s.p.p:0));
+    const rows=sides.map(s=>{const p=s.p;let nm;if(!p||p.i==null)nm='<b>Skipped</b>';else{const o=decode(p.i);nm=`<b>${esc(o.name)}</b> <small>${p.y}</small>`}
+      return `<div class="pk">${sides.length>1?`<span class="dot ${s.w==='c'?'p2':'p'+(s.w+1)}"></span>`:''}<span class="nm">${sides.length>1?`<small>${esc(s.n)}:</small> `:''}${nm}</span><span class="pt ${sides.length>1&&p&&p.p===mx&&mx>0?'w':''}">${(p?p.p:0).toFixed(1)}</span></div>`}).join('');
+    const own=G.picks[0].find(p=>p.r===r);const b=own&&own.best;
+    const bst=!multi&&b&&!(own.i===b.i&&own.y===b.y)?`<div class="bst">Best available: ${esc(decode(b.i).name)} ${b.y}, ${(Math.round(b.p*mult(r)*10)/10).toFixed(1)}</div>`:'';
+    return `<li><div class="ph2">R${r+1} · ${esc(prop.title)}${r===G.prime?'<span class="x">2×</span>':''}</div>${rows}${bst}</li>`}).join('');
+  if(multi||(ch&&ch.a)){
+    const A=ch&&ch.a?{n:ch.a.n,t:remoteTotal(ch.a)}:{n:G.names[0],t:total(0)};
+    const B=ch&&ch.a?{n:G.names[0],t:total(0)}:{n:G.names[1],t:total(1)};
+    const win=A.t===B.t?null:(A.t>B.t?A:B);
+    head=`<section class="card over"><div class="k">Final</div><div class="vs"><div class="s ${win===A?'w':''}">${A.t.toFixed(1)}<small>${esc(A.n)}</small></div><div class="v">vs</div><div class="s ${win===B?'w':''}">${B.t.toFixed(1)}<small>${esc(B.n)}</small></div></div>
+      <span class="crown">${win?esc(win.n)+' wins by '+(Math.abs(A.t-B.t)).toFixed(1):'Dead even. It\'s a tie.'}</span></section>`;
+  }else{
+    const best=Math.round(props().reduce((a,p,r)=>{const pk=G.picks[0].find(x=>x.r===r);return a+(pk&&pk.best?pk.best.p*mult(r):0)},0)*10)/10;
+    head=`<section class="card over"><div class="k">${G.mode==='daily'?'Daily draft · '+esc(G.daily):'Final score'}</div><div class="big">${total(0).toFixed(1)}</div><div class="bl">fantasy points</div>
+      <p class="why">The best available pick every round would have scored ${best.toFixed(1)}.${G.wrong[0]?` ${G.wrong[0]} pick${G.wrong[0]>1?'s':''} didn't fit.`:''}</p></section>`;
+  }
+  let shareHtml='';
+  if(G.mode==='ch'&&!(ch&&ch.a)){
+    const code=makeCode({s:G.seed,a:packSide(0)});const url=shareURL(code);
+    const txt=`${G.names[0]} drafted ${total(0).toFixed(1)} pts in War Room. Same 7 props, can you beat it?\n${url||'Open War Room, tap "Have a code?" and paste:\n'+code}`;
+    shareHtml=`<section class="card"><div class="card-h"><h2>Send your challenge</h2><span>Same props for your friend</span></div><div class="card-b"><div class="share">${esc(txt.split('\n')[0])}<br><small style="color:var(--mute)">${url?'+ challenge link':'+ challenge code'}</small></div><div class="btns"><button class="btn pri" id="shareBtn">${navigator.share?'Share challenge':'Copy challenge'}</button></div></div></section>`;
+    shareHtml=shareHtml.replace('id="shareBtn"','id="shareBtn" data-t="'+esc(txt)+'"');
+  }else if(ch&&ch.a&&!ch.view){
+    const code=makeCode({s:G.seed,a:ch.a,c:packSide(0)});const url=shareURL(code);
+    const A=remoteTotal(ch.a),B=total(0);
+    const txt=`War Room: ${ch.a.n} ${A.toFixed(1)}, ${G.names[0]} ${B.toFixed(1)}. ${A===B?'Tie!':(B>A?G.names[0]:ch.a.n)+' wins.'}\n${url||'See every pick: open War Room, tap "Have a code?" and paste:\n'+code}`;
+    shareHtml=`<section class="card"><div class="card-h"><h2>Send the result back</h2><span>${esc(ch.a.n)} sees every pick</span></div><div class="card-b"><div class="share">${esc(txt.split('\n')[0])}<br><small style="color:var(--mute)">${url?'+ link to every pick':'+ result code'}</small></div><div class="btns"><button class="btn pri" id="shareBtn">${navigator.share?'Share result':'Copy result'}</button></div></div></section>`;
+    shareHtml=shareHtml.replace('id="shareBtn"','id="shareBtn" data-t="'+esc(txt)+'"');
+  }else if(!multi&&!ch){
+    const grid=G.picks[0].slice().sort((a,b)=>a.r-b.r).map(p=>p.i==null?'⬜':p.best&&p.i===p.best.i&&p.y===p.best.y?'🟩':p.best&&p.raw>=p.best.p*.75?'🟨':'🟧').join('');
+    const txt=`War Room ${G.mode==='daily'?G.daily:''} ${total(0).toFixed(1)} pts\n${grid}`;
+    shareHtml=`<section class="card"><div class="card-h"><h2>Share</h2><span>🟩 best pick · 🟨 within 25% · 🟧 lower</span></div><div class="card-b"><div class="share">${esc(txt)}</div><div class="btns"><button class="btn" id="shareBtn" data-t="${esc(txt)}">${navigator.share?'Share':'Copy'}</button></div></div></section>`;
+  }
+  app().innerHTML=`<div style="height:18px"></div>`+head+shareHtml+
+   `<section class="card"><div class="card-h"><h2>Round by round</h2><span>${esc(modeLabel())}</span></div><div class="card-b"><ul class="rounds">${rounds}</ul></div></section>`+
+   (multi?`<div class="lus" style="margin-top:14px">${lineupCard(0,G.names[0])}${lineupCard(1,G.names[1])}</div>`:lineupCard(0,ch&&ch.a?G.names[0]+"'s lineup":null))+
+   `<section class="card"><div class="card-b"><div class="btns">${multi?'<button class="btn pri" id="again">Rematch</button>':''}<button class="btn ${multi?'':'pri'}" id="homeB">Back to menu</button></div></div></section>`;
+  const sb=$('#shareBtn');if(sb)sb.onclick=()=>{const t=sb.dataset.t;if(navigator.share)navigator.share({text:t}).catch(err=>{if(!err||err.name!=='AbortError')copy(t)});else copy(t)};
+  const ag=$('#again');if(ag)ag.onclick=()=>newGame('pp',{names:[G.names[1],G.names[0]]});
+  $('#homeB').onclick=goHome;
+  if(!(ch&&ch.view))store.del('game');
+}
+function remotePick(side,r){const x=side.p[r];if(!x||x[0]<0)return {r,i:null,p:0};return {r,i:x[0],y:x[1],p:x[2]/10}}
+function remoteTotal(side){return Math.round(side.p.reduce((a,x)=>a+(x&&x[0]>=0?x[2]:0),0))/10}
+
+/* ---------- home ---------- */
+function goHome(){G=null;home()}
+function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function home(msg){
+  window.scrollTo(0,0);
+  const saved=store.get('game',null);
+  const resume=saved&&!saved.done?`<button class="mode-b" id="resume"><div class="ico">${I.clock}</div><div><b>Resume your draft</b><small>${esc({solo:'Solo draft',daily:'Daily draft',pp:'1v1 on this phone',ch:'Challenge'}[saved.mode])}, round ${Math.min(saved.round+1,ROUNDS)} of ${ROUNDS}</small></div><span class="chev">›</span></button>`:'';
+  app().innerHTML=`
+  <section class="card hero" style="margin-top:18px">
+    <div class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 12.5h8M8 16h5"/></svg></div>
+    <h1>War Room</h1>
+    <p>Seven rounds, seven wild props. Draft a real player who fits each one, and his best season that fits scores fantasy points.</p>
+    <div class="modes">
+      ${resume}
+      <button class="mode-b pri" id="mSolo"><div class="ico">${I.draft}</div><div><b>Solo draft</b><small>Fresh props every time</small></div><span class="chev">›</span></button>
+      <button class="mode-b" id="mPP"><div class="ico" style="background:var(--p2-soft);color:var(--p2)">1v1</div><div><b>1v1 on this phone</b><small>Snake draft: take turns, no shared players</small></div><span class="chev">›</span></button>
+      <button class="mode-b" id="mCh"><div class="ico">${I.send}</div><div><b>Challenge a friend</b><small>Draft, then text them a link with the same props</small></div><span class="chev">›</span></button>
+      <button class="mode-b" id="mDaily"><div class="ico">${I.cal}</div><div><b>Daily draft</b><small>Everyone gets the same props today</small></div><span class="chev">›</span></button>
+    </div>
+  </section>
+  ${msg?`<div class="banner">${msg}</div>`:''}
+  <section class="card"><div class="card-h"><h2>Have a code?</h2><span>From a friend's challenge</span></div><div class="card-b">
+    <div class="codebox"><input id="code" placeholder="Paste a challenge code or link" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="codeGo">Open</button></div><div class="err" id="codeErr" hidden></div></div></section>
+  <section class="card"><div class="card-h"><h2>How it works</h2></div><div class="card-b"><ul class="how">
+    <li><span class="n">1</span><span class="t">A prop card flips over<small>Like “Steelers · 1990s”, “Undrafted” or “Number ends in 3”.</small></span></li>
+    <li><span class="n">2</span><span class="t">Draft a QB, RB, WR or TE who fits<small>Fill QB, 2 RB, 2 WR, TE and a FLEX. Plan ahead: every spot needs a player.</small></span></li>
+    <li><span class="n">3</span><span class="t">His best season that fits scores<small>PPR fantasy points, regular seasons 1970–${LAST}. One round each game is worth double.</small></span></li>
+  </ul></div></section>
+  <p class="foot">Stats and rosters from the project's verified NFL database (built ${esc(D.built)}). ${n0(P.length)} QBs, RBs, WRs and TEs with fantasy stats since 1970.</p>`;
+  if(resume)$('#resume').onclick=()=>{G=saved;G.view=G.view==='end'?'end':G.view;render()};
+  $('#mSolo').onclick=()=>newGame('solo');
+  $('#mDaily').onclick=()=>{const d=today();newGame('daily',{seed:hash('daily'+d),daily:d})};
+  $('#mPP').onclick=()=>namesSheet(2,n=>newGame('pp',{names:n}));
+  $('#mCh').onclick=()=>namesSheet(1,n=>{store.set('name',n[0]);newGame('ch',{names:n})});
+  $('#codeGo').onclick=()=>openCode($('#code').value);
+  $('#code').addEventListener('keydown',e=>{if(e.key==='Enter')openCode($('#code').value)});
+}
+function hash(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function namesSheet(n,cb){
+  const ov=$('#ov');const def=[store.get('name',''),store.get('name2','')];
+  ov.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="nh"><h2 id="nh">${n===2?'Who\'s playing?':'Your name'}</h2><p style="color:var(--ink2);margin:0 0 14px">${n===2?'Player 1 picks first in round 1, then the order flips every round (snake draft). Once a player is taken, he\'s gone.':'Your friend will see this name on the challenge.'}</p>
+   ${[...Array(n)].map((_,k)=>`<div class="field"><label for="nm${k}">Player ${k+1}</label><input id="nm${k}" maxlength="16" value="${esc(def[k])}" placeholder="${k?'Friend':'You'}"></div>`).join('')}
+   <div class="btns"><button class="btn" id="nCancel">Cancel</button><button class="btn pri" id="nGo">Start draft</button></div></div>`;
+  ov.hidden=false;$('#nm0').focus();
+  const go=()=>{const names=[...Array(n)].map((_,k)=>($('#nm'+k).value.trim()||(k?'Player 2':(n===2?'Player 1':'You'))).slice(0,16));
+    if(n===2&&names[0].toLowerCase()===names[1].toLowerCase()){names[1]+=' 2'}
+    store.set('name',names[0]);if(n===2)store.set('name2',names[1]);ov.hidden=true;cb(names)};
+  $('#nGo').onclick=go;$('#nCancel').onclick=()=>ov.hidden=true;
+  ov.querySelectorAll('input').forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter')go()}));
+}
+function openCode(str){
+  let o;try{o=readCode(str)}catch(e){const er=$('#codeErr');if(er){er.textContent=e.message;er.hidden=false}else home(esc(e.message));return}
+  if(o.b&&o.b!==D.built){/* data changed since the code was made: stored points are shown as sent */}
+  if(o.c){ // finished head-to-head: view only
+    G={v:1,mode:'ch',seed:o.s,prime:genProps(o.s).prime,round:ROUNDS,turn:0,names:[o.c.n],lu:[Array(SLOTS.length).fill(null)],picks:[o.c.p.map((x,r)=>x[0]<0?{r,i:null,p:0,k:-1}:{r,i:x[0],y:x[1],p:x[2]/10,k:-1})],wrong:[0],done:true,ch:{a:o.a,view:true},view:'end'};
+    // rebuild lineup slots for display
+    G.picks[0].forEach((p,pi)=>{if(p.i!=null){const k=slotFor(G.lu[0],decode(p.i).pos);if(k>=0){G.lu[0][k]=pi;p.k=k}}});
+    end();return;
+  }
+  const a=o.a;const tot=remoteTotal(a);
+  const ov=$('#ov');
+  ov.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ch"><h2 id="ch">${esc(a.n)} challenged you</h2><p style="color:var(--ink2);margin:0 0 14px">${esc(a.n)} scored <b>${tot.toFixed(1)}</b> points. You get the same 7 props in the same order. Their picks stay hidden until you finish.</p>
+   <div class="field"><label for="nm0">Your name</label><input id="nm0" maxlength="16" value="${esc(store.get('name',''))}" placeholder="You"></div>
+   <div class="btns"><button class="btn" id="nCancel">Not now</button><button class="btn pri" id="nGo">Accept</button></div></div>`;
+  ov.hidden=false;
+  $('#nGo').onclick=()=>{let n=($('#nm0').value.trim()||'You').slice(0,16);if(n.toLowerCase()===a.n.toLowerCase())n+=' 2';store.set('name',n);ov.hidden=true;newGame('ch',{seed:o.s,names:[n],ch:{a}})};
+  $('#nCancel').onclick=()=>ov.hidden=true;
+}
+
+function rulesSheet(){
+  const ov=$('#ov');
+  ov.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rh"><h2 id="rh">How to play</h2>
+  <ul class="rules">
+   <li>Each of the <b>7 rounds</b> shows a prop. Draft one real <b>QB, RB, WR or TE</b> who fits it.</li>
+   <li>Your lineup is <b>QB, RB, RB, WR, WR, TE, FLEX</b>. He goes into his position's spot, or FLEX (RB, WR or TE) when that's full. Every prop has at least three good answers at every position, so you can always fill the last spot.</li>
+   <li>He scores his <b>best regular season that fits the prop</b>, from 1970 to ${LAST}. Team props need him to have played for that team that season. Traded mid-season? The whole season counts.</li>
+   <li>One round per game is a <b>2× round</b>. It's marked on the round dots and the prop card.</li>
+   <li>A pick that doesn't fit is turned away with the reason, and you can try again. You can also skip a round for 0.</li>
+   <li>After each pick you see the <b>best available</b> answer for your open spots.</li>
+  </ul>
+  <h3>Scoring (PPR)</h3>
+  <ul class="rules"><li>1 per catch, 1 per 10 rushing or receiving yards, 6 per rushing or receiving TD</li><li>1 per 25 passing yards, 4 per passing TD, −2 per interception</li><li>Fumbles and 2-point conversions aren't counted.</li></ul>
+  <h3>1v1</h3>
+  <ul class="rules"><li><b>On this phone:</b> snake draft. Both players answer the same prop each round, the first pick flips every round, and a player can only be on one team.</li>
+   <li><b>Challenge a friend:</b> play your draft, then send the link. Your friend gets the same props in the same order without seeing your picks, then can send the result back.</li></ul>
+  <div class="btns" style="margin-top:16px"><button class="btn pri" id="rClose">Got it</button></div></div>`;
+  ov.hidden=false;$('#rClose').onclick=()=>ov.hidden=true;$('#rClose').focus();
+}
+
+$('#homeBtn').onclick=()=>{const leaving=G&&!G.done;goHome();if(leaving)toast('Draft saved. Resume it from the menu.')};
+$('#rulesBtn').onclick=rulesSheet;
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')e.target.hidden=true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov').hidden)$('#ov').hidden=true});
+try{if(window.top===window&&document.referrer!==undefined&&location.pathname.includes('/games/'))$('#backBtn').hidden=false}catch(e){}
+
+load().then(()=>{
+  const h=decodeURIComponent((location.hash||'').slice(1));
+  if(/WR1\./.test(h)){history.replaceState(null,'',location.pathname+location.search);home();openCode(h)}
+  else home();
+}).catch(e=>{app().innerHTML=`<div class="loading"><div><b>Couldn't load the player data</b><div style="color:var(--mute);margin-top:6px">${esc(e.message)}. Check your connection and reload.</div></div></div>`});
+window.__WR={genProps,evalPick,decode,pool,get G(){return G},choose,skip,search,props,okPool,makeProp,rng,KINDS};
+})();
+</script>
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/games/sw.js',{scope:'/games/'}))</script>
