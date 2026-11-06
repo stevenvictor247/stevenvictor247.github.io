@@ -145,7 +145,7 @@ const NFL_TEAMS={ARI:'Arizona Cardinals',ATL:'Atlanta Falcons',BAL:'Baltimore Ra
 const POS_NAME={QB:'Quarterback',RB:'Running back',FB:'Fullback',WR:'Wide receiver',TE:'Tight end',OT:'Offensive tackle',G:'Guard',C:'Center',OL:'Offensive line',DE:'Defensive end',DT:'Defensive tackle',DL:'Defensive line',LB:'Linebacker',CB:'Cornerback',S:'Safety',DB:'Defensive back',K:'Kicker',P:'Punter',LS:'Long snapper'};
 // Positions that light up yellow for each other ("close").
 const NEAR_POS={nfl:[['OT','G','C'],['DE','DT'],['DE','LB'],['CB','S'],['RB','FB'],['K','P','LS']],cfb:[['DL','LB'],['LB','DB'],['K','P','LS']]};
-const CLS=['','FR','SO','JR','SR'];
+const CLS=['','FR','SO','JR','SR','GR'];
 const STATES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'Washington, D.C.',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',PR:'Puerto Rico',AS:'American Samoa',GU:'Guam'};
 const LG={
   nfl:{max:8,title:'Mystery NFL player',cols:['Team','Div','Pos','Ht','Age','#']},
@@ -155,7 +155,7 @@ const EPOCH=Date.UTC(2026,10,6); // Nov 6, 2026 = puzzle #1
 
 let DATA=null, lg=store.get('lg','nfl'), md=store.get('md','daily'), game=null, sugIdx=-1, sugList=[];
 
-function norm(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[.'’\-]/g,'').replace(/\s+/g,' ').trim()}
+function norm(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[.'’‘ʻ`\-]/g,'').replace(/\s+/g,' ').trim()}
 function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function dayNum(){const d=new Date();return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-EPOCH)/864e5)+1}
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
@@ -166,7 +166,7 @@ function prep(raw){
   const mk=(L,rows)=>rows.map((r,i)=>{
     const p=L==='nfl'
       ?{i,name:r[0],team:r[1],grp:r[2],pos:r[3],ht:r[4],birth:r[5],num:r[6],college:r[7],img:r[8]?(r[8].startsWith('http')?r[8]:'https://static.www.nfl.com/image/upload/f_auto,q_auto/league/'+r[8]):'',al:r[9],ans:r[10]}
-      :{i,name:r[0],team:r[1],grp:r[2],pos:r[3],ht:r[4],yr:r[5],num:r[6],eid:r[7],hs:r[8],al:r[9],ans:r[10],img:'https://a.espncdn.com/i/headshots/college-football/players/full/'+r[7]+'.png'};
+      :{i,name:r[0],team:r[1],grp:r[2],pos:r[3],ht:r[4],yr:r[5],num:r[6],eid:r[7],hs:r[8],al:r[9],ans:r[10],img:/^\d+$/.test(String(r[7]))?'https://a.espncdn.com/i/headshots/college-football/players/full/'+r[7]+'.png':''};
     p.key=L==='nfl'?r[11]:String(r[7]);
     p.k=[p.name].concat(p.al?p.al.split('|'):[]).map(norm);
     return p});
@@ -284,7 +284,7 @@ function endCard(){
     :`${DATA.cfb.school[a.team]||a.team} · ${POS_NAME[a.pos]||a.pos} · #${a.num}`;
   const line2=L==='nfl'
     ?`${ft(a.ht)} · ${ageOf(a.birth)} years old${a.college?' · '+esc(a.college):''}`
-    :`${ft(a.ht)} · ${['','Freshman','Sophomore','Junior','Senior'][a.yr]}${a.hs?' · from '+esc(STATES[a.hs]||a.hs):''}`;
+    :`${ft(a.ht)} · ${['','Freshman','Sophomore','Junior','Senior','Graduate'][a.yr]}${a.hs?' · from '+esc(STATES[a.hs]||a.hs):''}`;
   return `<div class="end"><h2>${game.won?(n===1?'First try. Unreal.':`Got it in ${n}!`):'Not this time'}</h2><p class="sub">${game.won?'You found the mystery player.':'The mystery player was:'}</p>
     <div class="reveal">${photo(a,'ph')}<div><b>${esc(a.name)}</b><span>${esc(line)}</span><span>${line2}</span></div></div>
     <div class="btns">${md==='unl'?'<button class="btn" id="nb">Play again</button>':''}<button class="btn${md==='unl'?' ghost':''}" id="sb">Share</button><button class="btn ghost" id="st">Stats</button></div>
@@ -351,13 +351,15 @@ function showHelp(){
   sheet(`<h2>How to play</h2>
   <p>Guess the mystery player. NFL gives you <b>8 guesses</b>, College gives you <b>10</b>. After each guess the tiles show how close you are.</p>
   <div class="ex">${t('hit','KC')}${t('near','<small>AFC<br>North</small>')}${t('miss','6\'2"','↑')}</div>
-  <ul><li><b>Green</b>: exact match.</li><li><b>Yellow</b>: close. Same conference but a different division; a neighboring position (DE and DT, DE and LB, CB and S, any two offensive linemen); or height, age or number within 2 (class within 1 year).</li><li><b>Gray</b>: not a match.</li><li><b>↑ ↓</b>: the mystery player's height, age, class or number is higher or lower.</li></ul>
+  <ul><li><b>Green</b>: exact match.</li><li><b>Yellow</b>: close. In the NFL, same conference but a different division. A neighboring position (NFL: DE and DT, DE and LB, CB and S, RB and FB, any two offensive linemen. College: DL and LB, LB and DB. Both: K, P and LS). Height, age or number within 2, or class within 1 year.</li><li><b>Gray</b>: not a match.</li><li><b>↑ ↓</b>: the mystery player's height, age, class or number is higher or lower.</li></ul>
   <h3>NFL</h3><p>Any player on a current NFL roster (active or injured reserve; not the practice squad). Answers come from the league's well-known players. Age is the player's age today.</p>
-  <h3>College</h3><p>Any player on a 2026 Power 4 roster: SEC, Big Ten, Big 12, ACC, plus Notre Dame. Answers are this season's main contributors. Positions use one scale for every school (OL, DL, LB, DB…), and class is the roster year (FR, SO, JR, SR).</p>
+  <h3>College</h3><p>Any player on a 2026 Power 4 roster: SEC, Big Ten, Big 12, ACC, plus Notre Dame. Answers are this season's main contributors. Positions use one scale for every school (OL, DL, LB, DB…), and class is the year the school lists (FR, SO, JR, SR, or GR for fifth-year and graduate players).</p>
   <h3>Daily and Unlimited</h3><p>Daily is the same player for everyone, with a new one at midnight. Unlimited lets you keep playing.</p>`);
 }
 function showStats(){
   const k='stats:'+lg+':'+md, s=store.get(k,{played:0,wins:0,streak:0,best:0,dist:{}}), max=LG[lg].max;
+  // A daily streak ends once a day goes by without a win.
+  if(md==='daily'&&store.get('winday:'+lg,0)<dayNum()-1)s.streak=0;
   const top=Math.max(1,...Object.values(s.dist));
   sheet(`<h2>${lg==='nfl'?'NFL':'College'} ${md==='daily'?'Daily':'Unlimited'} stats</h2>
   <div class="stats4"><div><b>${s.played}</b><span>Played</span></div><div><b>${s.played?Math.round(s.wins/s.played*100):0}</b><span>Win %</span></div><div><b>${s.streak}</b><span>Streak</span></div><div><b>${s.best}</b><span>Best</span></div></div>
