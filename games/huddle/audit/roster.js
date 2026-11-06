@@ -16,7 +16,8 @@ if(!off.length){for(const tb of document.querySelectorAll('table')){const hs=[..
   if(iN<0||iH<0)continue;
   tb.querySelectorAll('tbody tr').forEach(tr=>{const td=[...tr.children].map(x=>x.innerText.trim());if(td.length<hs.length-1)return;
    off.push({j:iJ>=0?(+td[iJ]||(td[iJ]==='0'?0:null)):null,n:td[iN].split('\n')[0],p:iP>=0?td[iP]:'',c:iC>=0?C(td[iC]):null,h:H(td[iH])})}); if(off.length>40){how='table';break} else off=[]}}
-off=off.filter(o=>o.n&&o.n.length>2);
+off=off.filter(o=>o.n&&o.n.length>2&&!/team impact/i.test(o.p||''));
+if(off.length<40) return TEAM+' FAIL off'+off.length+' '+document.title;
 const D=window.__D||(window.__D=await (await fetch('https://stevenvictor247.github.io/games/huddle/data.json')).json());
 const ours=D.cfb.p.filter(x=>x[1]===TEAM); const by={}; off.forEach(o=>{by[nm(o.n)]=o; const parts=o.n.split(' '); if(parts.length>1) by['L'+nm(parts.slice(1).join(''))+'|'+o.j]=o});
 const upd=[], miss=[]; const used=new Set();
