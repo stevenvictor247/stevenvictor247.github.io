@@ -279,6 +279,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const store={get(k,d){try{const v=localStorage.getItem('warroom1:'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('warroom1:'+k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem('warroom1:'+k)}catch(e){}}};
 const PH_BASE=(document.querySelector('meta[name="ph-base"]')||{}).content||'ph/';
 const ROUNDS=7;
+const WRONG=25, BRICK=100;  // BDGE Daily Rip rules: an invalid answer costs 25; giving up a round (a brick) costs 100
 const SLOTS=['QB','RB','RB','WR','WR','TE','FLEX'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MIN_PTS=30;   // a "real" answer for the pool check
@@ -573,19 +574,19 @@ function usedSet(){const s=new Set();for(const ps of G.picks)for(const p of ps)i
 function mult(r){return r===G.prime?2:1}
 
 let PEND=null; // player picked, waiting for his season
-function bad(t){const who=drafter();G.wrong[who]++;save();const say=$('#say');say.className='say bad';say.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg><span>${esc(t)}</span>`;live(t)}
+function bad(t,pen){const who=drafter();if(pen){G.wrong[who]++;save();t=`−${WRONG}: ${t}`;refreshScore()}const say=$('#say');say.className='say bad';say.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg><span>${esc(t)}</span>`;live(t)}
 function choose(i){
   const o=decode(i);const who=drafter();const prop=props()[G.round];const sl=SLOTS[G.round];
   if(G.names.length>1&&usedSet().has(i))return bad(`${o.name} is already on ${G.picks[0].some(p=>p&&p.i===i)?G.names[0]:G.names[1]}'s team.`);
   if(G.picks[who].some(p=>p&&p.i===i))return bad(`${o.name} is already on your team.`);
   if(!fitsSlot(o.pos,G.round))return bad(`This round fills your ${sl} spot${sl==='FLEX'?' (RB, WR or TE)':''}. ${o.name} is a ${o.pos}.`);
-  const e=evalPick(o,prop);if(!e.ok)return bad(e.reason);
+  const e=evalPick(o,prop);if(!e.ok)return bad(e.reason,true);
   PEND=i;draft();
 }
 function chooseYear(y){
   const o=decode(PEND);const who=drafter();const prop=props()[G.round];
   const e=evalSeason(o,prop,y);
-  if(!e.ok){const b=document.querySelector(`.yr[data-y="${y}"]`);if(b)b.classList.add('no');return bad(e.reason)}
+  if(!e.ok){const b=document.querySelector(`.yr[data-y="${y}"]`);if(b)b.classList.add('no');return bad(e.reason,true)}
   const best=bestAvail(who,prop);
   const pick={r:G.round,i:PEND,y,p:Math.round(e.p*mult(G.round)*10)/10,raw:e.p,k:G.round,best};
   G.lu[who][G.round]=G.picks[who].length;G.picks[who].push(pick);
@@ -594,7 +595,7 @@ function chooseYear(y){
 }
 function skip(){
   const who=drafter();PEND=null;
-  G.picks[who].push({r:G.round,i:null,p:0,k:-1,best:bestAvail(who,props()[G.round])});
+  G.picks[who].push({r:G.round,i:null,p:-BRICK,k:-1,brick:1,best:bestAvail(who,props()[G.round])});
   G.last={who,pick:G.picks[who][G.picks[who].length-1]};
   advance();
 }
@@ -608,12 +609,13 @@ function advance(){
   if(G.round>=ROUNDS){G.done=true}
   G.view='result';save();render();
 }
-const total=w=>Math.round(G.picks[w].reduce((a,p)=>a+(p?p.p:0),0)*10)/10;
+const total=w=>Math.round((G.picks[w].reduce((a,p)=>a+(p?p.p:0),0)-WRONG*(G.wrong[w]||0))*10)/10;
+function refreshScore(){const h=document.querySelector('.hud');if(h&&G&&!G.done){const t=document.createElement('div');t.innerHTML=hud();h.replaceWith(t.firstElementChild)}}
 
 /* ---------- challenge codes ---------- */
 function b64e(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)))}
-function packSide(w){return {n:G.names[w],p:G.picks[w].map(p=>p.i==null?[-1]:[p.i,p.y,Math.round(p.p*10)])}}
+function packSide(w){return {n:G.names[w],w:G.wrong[w]||0,p:G.picks[w].map(p=>p.i==null?[-1,0,Math.round(p.p*10)]:[p.i,p.y,Math.round(p.p*10)])}}
 function makeCode(obj){return 'WR2.'+b64e(JSON.stringify({b:D.built,...obj}))}
 function readCode(str){
   str=(str||'').trim();const m=str.match(/WR([12])\.[A-Za-z0-9_-]+/);if(!m)throw new Error('That code doesn\'t look right.');if(m[1]==='1')throw new Error('That challenge is from an older version of War Room. Ask your friend for a new one.');
@@ -678,8 +680,8 @@ function lineupCard(w,title){
     if(pi==null)return `<li><span class="sl ${sl}">${sl}</span><span class="nm open">Open</span></li>`;
     const p=G.picks[w][pi];const o=decode(p.i);const s=o.S.find(x=>x.y===p.y);
     return `<li><span class="sl ${sl}">${sl}</span>${photo(o,'sm')}<span class="nm"><b>${esc(o.name)}</b><small>${p.y} ${esc(seasonTeams(s))}</small></span><span class="pt">${p.p.toFixed(1)}${p.r===G.prime?'<span class="x2s">2×</span>':''}</span></li>`}).join('');
-  const sk=G.picks[w].filter(p=>p.i==null).length;
-  return `<section class="card"><div class="card-h"><h2>${G.names.length>1?`<span class="dot p${w+1}"></span>`:''}${esc(title||'Your lineup')}</h2><span>${total(w).toFixed(1)} pts</span></div><div class="card-b"><ul class="lu">${li}</ul>${sk?`<p class="empty" style="margin:10px 0 0;color:var(--mute);font-size:13px">${sk} round${sk>1?'s':''} skipped (0 pts).</p>`:''}</div></section>`;
+  const sk=G.picks[w].filter(p=>p.i==null).length;const wr=G.wrong[w]||0;
+  return `<section class="card"><div class="card-h"><h2>${G.names.length>1?`<span class="dot p${w+1}"></span>`:''}${esc(title||'Your lineup')}</h2><span>${total(w).toFixed(1)} pts</span></div><div class="card-b"><ul class="lu">${li}</ul>${sk||wr?`<p class="empty" style="margin:10px 0 0;color:var(--bad);font-size:13px;font-weight:600">${[sk?`${sk} brick${sk>1?'s':''} (−${BRICK*sk})`:'',wr?`${wr} wrong guess${wr>1?'es':''} (−${WRONG*wr})`:''].filter(Boolean).join(' · ')}</p>`:''}</div></section>`;
 }
 function draft(){
   const r=G.round;const prop=props()[r];const who=drafter();const sl=SLOTS[r];
@@ -693,7 +695,7 @@ function draft(){
       <div class="yq">Pick his season. It has to fit the prop, and that season's stats are your score.</div>
       <div class="yrs" id="yrs">${yrs}</div>
       <div class="say" id="say" role="status"></div>
-      <div class="ask-f"><span class="hint">Seasons 1970–${LAST} with stats</span><button class="tbtn" id="skipBtn">Skip round (0 pts)</button></div></section>`;
+      <div class="ask-f"><span class="hint">Seasons 1970–${LAST} with stats</span><button class="tbtn" id="skipBtn">Brick it (−100)</button></div></section>`;
   }else{
     ask=`<section class="card ask" style="margin-top:14px">
     <label class="sr" for="q">Search for a player</label>
@@ -701,10 +703,10 @@ function draft(){
     <input id="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Draft ${need}…" enterkeyhint="go"><button class="clr" id="clr" aria-label="Clear" hidden>×</button></div>
     <ul class="sugg" id="sugg" hidden></ul>
     <div class="say" id="say" role="status"></div>
-    <div class="ask-f"><span class="hint">Filling your <b class="slt ${sl}">${sl}</b> spot${sl==='FLEX'?' (RB, WR or TE)':''}</span><button class="tbtn" id="skipBtn">Skip round (0 pts)</button></div>
+    <div class="ask-f"><span class="hint">Filling your <b class="slt ${sl}">${sl}</b> spot${sl==='FLEX'?' (RB, WR or TE)':''}</span><button class="tbtn" id="skipBtn">Brick it (−100)</button></div>
   </section>`}
   app().innerHTML=hud()+turn+propCard(prop,r)+ask+(G.names.length>1?`<div class="lus" style="margin-top:14px">${lineupCard(0,G.names[0])}${lineupCard(1,G.names[1])}</div>`:lineupCard(0));
-  $('#skipBtn').onclick=e=>{const b=e.currentTarget;if(b.dataset.arm){skip();return}b.dataset.arm='1';b.textContent='Tap again to skip (0 pts)';b.style.color='var(--bad)';setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent='Skip round (0 pts)';b.style.color=''}},4000)};
+  $('#skipBtn').onclick=e=>{const b=e.currentTarget;if(b.dataset.arm){skip();return}b.dataset.arm='1';b.textContent='Tap again to brick (−100)';b.style.color='var(--bad)';setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent='Brick it (−100)';b.style.color=''}},4000)};
   if(PEND!=null){
     $('#chg').onclick=()=>{PEND=null;draft()};
     $('#yrs').addEventListener('click',e=>{const b=e.target.closest('.yr');if(b)chooseYear(+b.dataset.y)});
@@ -742,7 +744,7 @@ function result(){
   const {who,pick}=G.last;const prop=props()[pick.r];
   const nextLbl=G.done?'See final results':(G.names.length>1?`${G.names[drafter()]}'s pick`:`Round ${G.round+1}`);
   let body;
-  if(pick.i==null){body=`<div class="res"><div class="who"><div class="nm"><b>Round skipped</b><small>${esc(prop.title)}</small></div><div class="pts"><b>0.0</b><small>PTS</small></div></div>${bestLine(pick)}</div>`}
+  if(pick.i==null){body=`<div class="res"><div class="who"><div class="ico" style="width:72px;height:72px;font-size:30px;background:var(--bad-soft);color:var(--bad)">🧱</div><div class="nm"><b>Brick</b><small>${esc(prop.title)}</small></div><div class="pts"><b style="color:var(--bad)">−${BRICK}</b><small>PTS</small></div></div>${bestLine(pick)}</div>`}
   else{const o=decode(pick.i);const s=o.S.find(x=>x.y===pick.y);
     body=`<div class="res"><div class="who">${photo(o,'xl')}<div class="nm"><b>${esc(o.name)}</b><small>${o.pos} · ${pick.y} ${esc(seasonTeams(s))}</small><small>Your ${SLOTS[pick.k]}</small></div><div class="pts"><b>${pick.p.toFixed(1)}</b><small>${pick.r===G.prime?'PTS · 2×':'PTS'}</small></div></div>
       <div class="line">${statLine(o,s)}</div>${bestLine(pick)}</div>`}
@@ -752,7 +754,7 @@ function result(){
    (G.names.length>1?`<div class="lus" style="margin-top:14px">${lineupCard(0,G.names[0])}${lineupCard(1,G.names[1])}</div>`:lineupCard(0));
   $('#next').onclick=()=>{G.view=G.done?'end':'draft';G.last=null;save();render()};
   $('#next').focus();
-  live(pick.i==null?'Round skipped':`${decode(pick.i).name}, ${pick.y}, ${pick.p} points`);
+  live(pick.i==null?`Brick, minus ${BRICK}`:`${decode(pick.i).name}, ${pick.y}, ${pick.p} points`);
 }
 function bestLine(pick){
   const b=pick.best;if(!b)return '';const o=decode(b.i);const s=o.S.find(x=>x.y===b.y);
@@ -767,7 +769,7 @@ function end(){
     const sides=G.names.map((n,w)=>({n,w,p:G.picks[w].find(p=>p.r===r)}));
     if(ch&&ch.a){sides.unshift({n:ch.a.n,w:'c',p:remotePick(ch.a,r)})}
     const mx=Math.max(...sides.map(s=>s.p?s.p.p:0));
-    const rows=sides.map(s=>{const p=s.p;let nm;if(!p||p.i==null)nm='<b>Skipped</b>';else{const o=decode(p.i);nm=`<b>${esc(o.name)}</b> <small>${p.y}</small>`}
+    const rows=sides.map(s=>{const p=s.p;let nm;if(!p||p.i==null)nm=p&&p.p<0?'<b>🧱 Brick</b>':'<b>Skipped</b>';else{const o=decode(p.i);nm=`<b>${esc(o.name)}</b> <small>${p.y}</small>`}
       return `<div class="pk">${sides.length>1?`<span class="dot ${s.w==='c'?'p2':'p'+(s.w+1)}"></span>`:''}<span class="nm">${sides.length>1?`<small>${esc(s.n)}:</small> `:''}${nm}</span><span class="pt ${sides.length>1&&p&&p.p===mx&&mx>0?'w':''}">${(p?p.p:0).toFixed(1)}</span></div>`}).join('');
     const own=G.picks[0].find(p=>p.r===r);const b=own&&own.best;
     const bst=!multi&&b&&!(own.i===b.i&&own.y===b.y)?`<div class="bst">Best available: ${esc(decode(b.i).name)} ${b.y}, ${(Math.round(b.p*mult(r)*10)/10).toFixed(1)}</div>`:'';
@@ -781,7 +783,7 @@ function end(){
   }else{
     const best=Math.round(props().reduce((a,p,r)=>{const pk=G.picks[0].find(x=>x.r===r);return a+(pk&&pk.best?pk.best.p*mult(r):0)},0)*10)/10;
     head=`<section class="card over"><div class="k">${G.mode==='daily'?'Daily draft · '+esc(G.daily):'Final score'}</div><div class="big">${total(0).toFixed(1)}</div><div class="bl">fantasy points</div>
-      <p class="why">The best available pick every round would have scored ${best.toFixed(1)}.${G.wrong[0]?` ${G.wrong[0]} pick${G.wrong[0]>1?'s':''} didn't fit.`:''}</p></section>`;
+      <p class="why">The best available pick every round would have scored ${best.toFixed(1)}.${G.wrong[0]?` Wrong guesses cost you ${WRONG*G.wrong[0]}.`:''}${G.picks[0].some(p=>p.brick)?` Bricks cost you ${BRICK*G.picks[0].filter(p=>p.brick).length}.`:''}</p></section>`;
   }
   let shareHtml='';
   if(G.mode==='ch'&&!(ch&&ch.a)){
@@ -796,9 +798,9 @@ function end(){
     shareHtml=`<section class="card"><div class="card-h"><h2>Send the result back</h2><span>${esc(ch.a.n)} sees every pick</span></div><div class="card-b"><div class="share">${esc(txt.split('\n')[0])}<br><small style="color:var(--mute)">${url?'+ link to every pick':'+ result code'}</small></div><div class="btns"><button class="btn pri" id="shareBtn">${navigator.share?'Share result':'Copy result'}</button></div></div></section>`;
     shareHtml=shareHtml.replace('id="shareBtn"','id="shareBtn" data-t="'+esc(txt)+'"');
   }else if(!multi&&!ch){
-    const grid=G.picks[0].slice().sort((a,b)=>a.r-b.r).map(p=>p.i==null?'⬜':p.best&&p.i===p.best.i&&p.y===p.best.y?'🟩':p.best&&p.raw>=p.best.p*.75?'🟨':'🟧').join('');
-    const txt=`War Room ${G.mode==='daily'?G.daily:''} ${total(0).toFixed(1)} pts\n${grid}`;
-    shareHtml=`<section class="card"><div class="card-h"><h2>Share</h2><span>🟩 best pick · 🟨 within 25% · 🟧 lower</span></div><div class="card-b"><div class="share">${esc(txt)}</div><div class="btns"><button class="btn" id="shareBtn" data-t="${esc(txt)}">${navigator.share?'Share':'Copy'}</button></div></div></section>`;
+    const grid=G.picks[0].slice().sort((a,b)=>a.r-b.r).map(p=>p.i==null?'🧱':p.best&&p.i===p.best.i&&p.y===p.best.y?'🟩':p.best&&p.raw>=p.best.p*.75?'🟨':'🟧').join('');
+    const txt=`War Room ${G.mode==='daily'?G.daily:''} ${total(0).toFixed(1)} pts${G.wrong[0]?` (${G.wrong[0]} wrong)`:''}\n${grid}`;
+    shareHtml=`<section class="card"><div class="card-h"><h2>Share</h2><span>🟩 best pick · 🟨 within 25% · 🟧 lower · 🧱 brick</span></div><div class="card-b"><div class="share">${esc(txt)}</div><div class="btns"><button class="btn" id="shareBtn" data-t="${esc(txt)}">${navigator.share?'Share':'Copy'}</button></div></div></section>`;
   }
   app().innerHTML=`<div style="height:18px"></div>`+head+shareHtml+
    `<section class="card"><div class="card-h"><h2>Round by round</h2><span>${esc(modeLabel())}</span></div><div class="card-b"><ul class="rounds">${rounds}</ul></div></section>`+
@@ -809,8 +811,8 @@ function end(){
   $('#homeB').onclick=goHome;
   if(!(ch&&ch.view))store.del('game');
 }
-function remotePick(side,r){const x=side.p[r];if(!x||x[0]<0)return {r,i:null,p:0};return {r,i:x[0],y:x[1],p:x[2]/10}}
-function remoteTotal(side){return Math.round(side.p.reduce((a,x)=>a+(x&&x[0]>=0?x[2]:0),0))/10}
+function remotePick(side,r){const x=side.p[r];if(!x||x[0]<0)return {r,i:null,p:(x&&x[2]||0)/10,brick:x&&x[2]<0?1:0};return {r,i:x[0],y:x[1],p:x[2]/10}}
+function remoteTotal(side){return Math.round(side.p.reduce((a,x)=>a+(x&&x[2]||0),0)-WRONG*10*(side.w||0))/10}
 
 /* ---------- home ---------- */
 function goHome(){G=null;home()}
@@ -837,7 +839,7 @@ function home(msg){
     <div class="codebox"><input id="code" placeholder="Paste a challenge code or link" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="codeGo">Open</button></div><div class="err" id="codeErr" hidden></div></div></section>
   <section class="card"><div class="card-h"><h2>How it works</h2></div><div class="card-b"><ul class="how">
     <li><span class="n">1</span><span class="t">A prop card flips over<small>Like “Teammate of Jerry Rice”, “Ring season” or “Exactly 7 touchdowns”.</small></span></li>
-    <li><span class="n">2</span><span class="t">Draft a player for that round's spot<small>QB, RB, RB, WR, WR, TE, then FLEX, top to bottom.</small></span></li>
+    <li><span class="n">2</span><span class="t">Draft a player for that round's spot<small>QB, RB, RB, WR, WR, TE, then FLEX. A wrong guess costs ${WRONG}, a brick costs ${BRICK}.</small></span></li>
     <li><span class="n">3</span><span class="t">Pick his season<small>The year has to fit the prop. Its PPR fantasy points (1970–${LAST}) are your score. One round is worth double.</small></span></li>
   </ul></div></section>
   <p class="foot">Stats and rosters from the project's verified NFL database (built ${esc(D.built)}). ${n0(P.length)} QBs, RBs, WRs and TEs with fantasy stats since 1970.</p>`;
@@ -866,7 +868,7 @@ function openCode(str){
   let o;try{o=readCode(str)}catch(e){const er=$('#codeErr');if(er){er.textContent=e.message;er.hidden=false}else home(esc(e.message));return}
   if(o.b&&o.b!==D.built){/* data changed since the code was made: stored points are shown as sent */}
   if(o.c){ // finished head-to-head: view only
-    G={v:1,mode:'ch',seed:o.s,prime:genProps(o.s).prime,round:ROUNDS,turn:0,names:[o.c.n],lu:[Array(SLOTS.length).fill(null)],picks:[o.c.p.map((x,r)=>x[0]<0?{r,i:null,p:0,k:-1}:{r,i:x[0],y:x[1],p:x[2]/10,k:-1})],wrong:[0],done:true,ch:{a:o.a,view:true},view:'end'};
+    G={v:1,mode:'ch',seed:o.s,prime:genProps(o.s).prime,round:ROUNDS,turn:0,names:[o.c.n],lu:[Array(SLOTS.length).fill(null)],picks:[o.c.p.map((x,r)=>x[0]<0?{r,i:null,p:(x[2]||0)/10,k:-1,brick:x[2]<0?1:0}:{r,i:x[0],y:x[1],p:x[2]/10,k:-1})],wrong:[o.c.w||0],done:true,ch:{a:o.a,view:true},view:'end'};
     // rebuild lineup slots for display
     G.picks[0].forEach((p,pi)=>{if(p.i!=null){G.lu[0][p.r]=pi;p.k=p.r}});
     end();return;
@@ -889,7 +891,9 @@ function rulesSheet(){
    <li>Draft a real player for that spot who fits the prop, then <b>pick his season</b>. The season has to fit too (for team props he must have played for that team that year), and that season's points are your score. Traded mid-season? The whole season counts.</li>
    <li>Every prop has at least 6 good answers for its spot, so there's always a pick. Seasons count from 1970 to ${LAST}.</li>
    <li>One round per game is a <b>2× round</b>. It's marked on the round dots and the prop card.</li>
-   <li>A pick that doesn't fit is turned away with the reason, and you can try again. You can also skip a round for 0.</li>
+   <li><b>Wrong guess: −${WRONG}.</b> A player or season that doesn't fit the prop costs ${WRONG} points off your final score. You see why, and you can try again.</li>
+   <li><b>Brick: −${BRICK}.</b> Stuck? Brick the round to move on. It scores −${BRICK}.</li>
+   <li><b>Unique picks:</b> once a player is drafted, he and all his seasons are gone for the rest of the game.</li>
    <li>After each pick you see the <b>best available</b> player and season for that spot.</li>
   </ul>
   <h3>Scoring (PPR)</h3>
