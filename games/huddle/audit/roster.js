@@ -3,9 +3,9 @@ const nm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replac
 const H=s=>{const m=String(s||'').match(/(\d)\s*['′’-]\s*(\d{1,2})/);return m?(+m[1]*12+ +m[2]):null};
 const RAW=new Set();
 const C=s=>{const raw=String(s||'').trim();const t=raw.toLowerCase().replace(/redshirt|\br-|\brs-|\(rs\)/g,' ').replace(/\s+/g,' ').trim();
-  let m=t.match(/(freshman|sophomore|junior|senior|graduate|grad|fifth|sixth|([1-6])(?:st|nd|rd|th)|\b(fr|so|jr|sr|gr)\b)/);
+  let m=t.match(/(freshman|sophomore|junior|senior|graduate|grad|post-?bacc|fifth|sixth|([1-8])(?:st|nd|rd|th)|\b(fr|so|jr|sr|gr)\b)/);
   if(!m){if(raw)RAW.add(raw);return null}
-  const w=m[1]; if(m[2])return Math.min(5,+m[2]); if(/^(fifth|sixth|grad|gr)/.test(w))return 5;
+  const w=m[1]; if(m[2])return Math.min(5,+m[2]); if(/^(fifth|sixth|grad|gr|post)/.test(w))return 5;
   return {freshman:1,fr:1,sophomore:2,so:2,junior:3,jr:3,senior:4,sr:4}[w]||null};
 let off=[], how='';
 const t=document.body.innerText;
