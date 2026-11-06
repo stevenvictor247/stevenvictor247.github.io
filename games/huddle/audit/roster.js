@@ -1,8 +1,12 @@
 (async(TEAM)=>{await new Promise(r=>setTimeout(r,2000));
 const nm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\b(jr|sr|ii|iii|iv|v)\b/g,'').replace(/[^a-z]/g,'');
 const H=s=>{const m=String(s||'').match(/(\d)\s*['′’-]\s*(\d{1,2})/);return m?(+m[1]*12+ +m[2]):null};
-const C=s=>{s=String(s||'').toLowerCase().replace(/redshirt|r-|rs-|\(rs\)|\./g,'').trim();
-  for(const [k,v] of [['fr',1],['fresh',1],['so',2],['soph',2],['jr',3],['jun',3],['sr',4],['sen',4],['gr',5],['grad',5],['5th',5],['6th',5]]) if(s.startsWith(k)) return v; return null};
+const RAW=new Set();
+const C=s=>{const raw=String(s||'').trim();const t=raw.toLowerCase().replace(/redshirt|\br-|\brs-|\(rs\)/g,' ').replace(/\s+/g,' ').trim();
+  let m=t.match(/(freshman|sophomore|junior|senior|graduate|grad|fifth|sixth|([1-6])(?:st|nd|rd|th)|\b(fr|so|jr|sr|gr)\b)/);
+  if(!m){if(raw)RAW.add(raw);return null}
+  const w=m[1]; if(m[2])return Math.min(5,+m[2]); if(/^(fifth|sixth|grad|gr)/.test(w))return 5;
+  return {freshman:1,fr:1,sophomore:2,so:2,junior:3,jr:3,senior:4,sr:4}[w]||null};
 let off=[], how='';
 const t=document.body.innerText;
 let re=/Jersey Number\n(\d+)\n([^\n]+)\nPosition\n([^\n]+)\nAcademic Year\n([^\n]+)\nHeight\n([^\n]+)/g, m;
@@ -26,4 +30,4 @@ for(const x of ours){let o=by[nm(x[0])]||(x[9]?x[9].split('|').map(a=>by[nm(a)])
  if(o.j!=null&&o.j!==x[6])u.push('j'+o.j); if(o.h&&o.h!==x[4])u.push('h'+o.h); if(o.c&&o.c!==x[5])u.push('c'+o.c); if(o.n!==x[0]&&o.n!==o.n.toUpperCase())u.push('n'+o.n+'^');
  if(u.length)upd.push(x[7]+':'+u.join(''));}
 const extra=off.filter(o=>!used.has(o)).map(o=>[o.j,o.n,o.p,o.c,o.h].join('|'));
-return TEAM+' '+how+' off'+off.length+' ours'+ours.length+'\nM '+miss.join(',')+'\nU '+upd.join(';')+'\nX '+extra.join(';');})
+return TEAM+' '+how+' off'+off.length+' ours'+ours.length+'\nM '+miss.join(',')+'\nU '+upd.join(';')+'\nX '+extra.join(';')+'\nR '+[...RAW].slice(0,8).join('|');})
