@@ -1,8 +1,8 @@
 // Football games app service worker.
 // Pages and data: network first, so every update shows up the next time the app opens; the cached copy is used offline.
 // Photos, icons and fonts: cache first (they never change under the same name).
-const CACHE = 'games-v2';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './handoff/', './handoff/index.html', './handoff/data.json', './war-room/', './war-room/index.html', './war-room/data.json'];
+const CACHE = 'games-v3';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './handoff/', './handoff/index.html', './handoff/data.json', './war-room/', './war-room/index.html', './war-room/data.json', './huddle/', './huddle/index.html', './huddle/data.json'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });

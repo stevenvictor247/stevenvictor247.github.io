@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b21b6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Games">
+<link rel="manifest" href="/games/manifest.webmanifest">
+<link rel="icon" href="/games/icons/favicon.png">
+<link rel="apple-touch-icon" href="/games/icons/apple-touch-icon.png">
+<style>[hidden]{display:none!important}</style>
+<title>Huddle</title>
+<meta name="description" content="Guess the mystery football player. NFL and Power 4 college football, daily or unlimited.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>
+:root{
+  --bg:#f2f4f7; --card:#fff; --line:#e3e6eb; --line2:#cfd4db; --soft:#f6f7f9;
+  --ink:#151a21; --ink2:#384150; --mute:#687180;
+  --brand:#5b21b6; --brand-2:#6d32cc; --brand-soft:#f1eafd;
+  --hit:#2f9e5b; --near:#e7b43f; --miss:#d6dae0;
+  --f:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid #2f7de1;outline-offset:2px}
+.wrap{max-width:680px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px)) 56px}
+.top{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;padding-top:env(safe-area-inset-top,0px)}
+.top .row{max-width:680px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px));height:58px;display:flex;align-items:center;gap:8px}
+.back{display:grid;place-items:center;width:34px;height:34px;border-radius:999px;color:var(--ink2);text-decoration:none;margin-left:-8px}
+.back svg{width:20px;height:20px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:900;font-size:20px;letter-spacing:-.02em}
+.mk{width:32px;height:32px;border-radius:9px;background:var(--brand);display:grid;place-items:center;flex:none}
+.mk svg{width:20px;height:20px}
+.sp{flex:1}
+.ibtn{width:36px;height:36px;border-radius:999px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--ink2)}
+.ibtn svg{width:18px;height:18px}
+.seg{display:flex;background:#e7eaee;border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:none;border-radius:999px;padding:7px 14px;font-size:14px;font-weight:700;color:var(--ink2)}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.12)}
+.modes{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px 0 6px}
+.seg.lg button{padding:8px 18px}
+.seg.brand button[aria-pressed=true]{background:var(--brand);color:#fff}
+.title{text-align:center;margin:14px 0 2px}
+.title h1{margin:0;font-size:26px;letter-spacing:-.02em;font-weight:900}
+.title p{margin:2px 0 0;color:var(--mute);font-size:14px}
+.search{position:relative;margin:16px 0 6px}
+.search input{width:100%;height:52px;border:1.5px solid var(--line2);border-radius:14px;background:var(--card);padding:0 16px 0 44px;font-size:17px;outline:none;-webkit-appearance:none}
+.search input:focus{border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+.search .mg{position:absolute;left:15px;top:16px;width:20px;height:20px;color:var(--mute)}
+.sug{position:absolute;left:0;right:0;top:56px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(16,24,40,.14);z-index:15;max-height:min(360px,55vh);overflow:auto;padding:4px}
+.sug button{display:flex;width:100%;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:10px 12px;border-radius:10px}
+.sug button.on,.sug button:hover{background:var(--soft)}
+.sug b{font-weight:600}
+.sug span{margin-left:auto;color:var(--mute);font-size:13px;white-space:nowrap}
+.sug .none{padding:12px;color:var(--mute);font-size:14px}
+.count{text-align:center;color:var(--mute);font-size:14px;font-weight:600;margin:4px 0 12px}
+.count .dots{display:inline-flex;gap:4px;vertical-align:middle;margin-left:8px}
+.count .dots i{width:8px;height:8px;border-radius:99px;background:var(--line2)}
+.count .dots i.u{background:var(--brand)}
+.head,.grow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.head{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);text-align:center;margin:0 0 6px;padding:0 2px}
+.guess{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;margin-bottom:8px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.guess .who{display:flex;align-items:center;gap:9px;padding:2px 4px 7px;font-weight:700;font-size:15px;min-width:0}
+.guess .who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.guess.win{border-color:var(--hit);box-shadow:0 0 0 2px rgba(47,158,91,.2)}
+.av{width:28px;height:28px;border-radius:8px;background:#e9ecf0 center/cover no-repeat;flex:none;display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--mute);overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover;object-position:top}
+.tile{height:56px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:15px;line-height:1.1;background:var(--miss);color:#2a313b;padding:2px;overflow:hidden}
+.tile small{font-size:10.5px;font-weight:800;letter-spacing:.02em}
+.tile .ar{font-size:13px;line-height:1;margin-top:2px;font-weight:900}
+.tile.hit{background:var(--hit);color:#fff}
+.tile.near{background:var(--near);color:#3a2b05}
+.tile.flip{animation:flip .45s ease both}
+@keyframes flip{0%{transform:rotateX(90deg);opacity:.2}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.tile.flip{animation:none}}
+.empty{border:1.5px dashed var(--line2);border-radius:14px;padding:22px 16px;text-align:center;color:var(--mute);font-size:14px}
+.key{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin:14px 0 4px}
+.key i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:5px}
+.end{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:4px 0 14px;text-align:center;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.end h2{margin:0 0 2px;font-size:20px;font-weight:900;letter-spacing:-.01em}
+.end .sub{color:var(--mute);font-size:14px;margin:0 0 14px}
+.reveal{display:flex;align-items:center;gap:14px;text-align:left;background:var(--soft);border-radius:14px;padding:12px;margin-bottom:14px}
+.reveal .ph{width:72px;height:72px;border-radius:12px;background:#e3e6eb;flex:none;overflow:hidden;display:grid;place-items:center;font-weight:900;font-size:22px;color:var(--mute)}
+.reveal .ph img{width:100%;height:100%;object-fit:cover;object-position:top}
+.reveal b{display:block;font-size:18px;line-height:1.2}
+.reveal span{display:block;color:var(--ink2);font-size:14px}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{border:0;border-radius:999px;padding:11px 20px;font-weight:800;font-size:15px;background:var(--brand);color:#fff}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line2)}
+.next{color:var(--mute);font-size:13px;margin-top:12px}
+.giveup{display:block;margin:4px auto 10px;border:0;background:none;color:var(--mute);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.foot{color:var(--mute);font-size:12.5px;text-align:center;margin-top:22px}
+.toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:600;z-index:60;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.ov{position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+@media (min-width:560px){.ov{align-items:center}}
+.sheet{background:var(--card);width:100%;max-width:520px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px))}
+@media (min-width:560px){.sheet{border-radius:20px}}
+.sheet h2{margin:0 0 10px;font-size:20px;font-weight:900}
+.sheet h3{margin:16px 0 6px;font-size:15px}
+.sheet p,.sheet li{font-size:14.5px;color:var(--ink2)}
+.sheet ul{padding-left:18px;margin:6px 0}
+.sheet .x{float:right;border:0;background:none;font-size:26px;line-height:1;color:var(--mute);margin:-6px -6px 0 0}
+.ex{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.stats4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;margin:10px 0 16px}
+.stats4 b{display:block;font-size:24px;font-weight:900}
+.stats4 span{font-size:12px;color:var(--mute)}
+.dist div{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px;font-weight:700}
+.dist i{display:block;height:20px;border-radius:5px;background:var(--line2);min-width:22px;color:#fff;font-style:normal;text-align:right;padding:0 6px;line-height:20px;font-size:12px}
+.dist i.cur{background:var(--hit)}
+.load{text-align:center;color:var(--mute);padding:40px 0}
+</style>
+<header class="top"><div class="row">
+  <a class="back" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a>
+  <div class="logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="9" r="3.2"/><path d="M5.5 19.5c1.2-3.3 3.6-5 6.5-5s5.3 1.7 6.5 5"/><path d="M12 2.8v1.4"/></svg></span>Huddle</div>
+  <span class="sp"></span>
+  <button class="ibtn" id="bStats" aria-label="Stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 20V11M12 20V5M18 20v-6"/></svg></button>
+  <button class="ibtn" id="bHelp" aria-label="How to play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.4"/><path d="M12 16.9v.1"/></svg></button>
+</div></header>
+<main class="wrap">
+  <div class="modes">
+    <div class="seg lg brand" role="group" aria-label="League"><button data-lg="nfl">NFL</button><button data-lg="cfb">College</button></div>
+    <div class="seg" role="group" aria-label="Mode"><button data-md="daily">Daily</button><button data-md="unl">Unlimited</button></div>
+  </div>
+  <div class="title"><h1 id="tTitle">Mystery NFL player</h1><p id="tSub"></p></div>
+  <div id="app"><div class="load">Loading players…</div></div>
+  <p class="foot" id="foot"></p>
+</main>
+<div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k,d){try{const v=localStorage.getItem('huddle:'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('huddle:'+k,JSON.stringify(v))}catch(e){}}};
+
+const NFL_TEAMS={ARI:'Arizona Cardinals',ATL:'Atlanta Falcons',BAL:'Baltimore Ravens',BUF:'Buffalo Bills',CAR:'Carolina Panthers',CHI:'Chicago Bears',CIN:'Cincinnati Bengals',CLE:'Cleveland Browns',DAL:'Dallas Cowboys',DEN:'Denver Broncos',DET:'Detroit Lions',GB:'Green Bay Packers',HOU:'Houston Texans',IND:'Indianapolis Colts',JAX:'Jacksonville Jaguars',KC:'Kansas City Chiefs',LV:'Las Vegas Raiders',LAC:'Los Angeles Chargers',LAR:'Los Angeles Rams',MIA:'Miami Dolphins',MIN:'Minnesota Vikings',NE:'New England Patriots',NO:'New Orleans Saints',NYG:'New York Giants',NYJ:'New York Jets',PHI:'Philadelphia Eagles',PIT:'Pittsburgh Steelers',SF:'San Francisco 49ers',SEA:'Seattle Seahawks',TB:'Tampa Bay Buccaneers',TEN:'Tennessee Titans',WAS:'Washington Commanders'};
+const POS_NAME={QB:'Quarterback',RB:'Running back',FB:'Fullback',WR:'Wide receiver',TE:'Tight end',OT:'Offensive tackle',G:'Guard',C:'Center',OL:'Offensive line',DE:'Defensive end',DT:'Defensive tackle',DL:'Defensive line',LB:'Linebacker',CB:'Cornerback',S:'Safety',DB:'Defensive back',K:'Kicker',P:'Punter',LS:'Long snapper'};
+// Positions that light up yellow for each other ("close").
+const NEAR_POS={nfl:[['OT','G','C'],['DE','DT'],['DE','LB'],['CB','S'],['RB','FB'],['K','P','LS']],cfb:[['DL','LB'],['LB','DB'],['K','P','LS']]};
+const CLS=['','FR','SO','JR','SR'];
+const STATES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'Washington, D.C.',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',PR:'Puerto Rico',AS:'American Samoa',GU:'Guam'};
+const LG={
+  nfl:{max:8,title:'Mystery NFL player',cols:['Team','Div','Pos','Ht','Age','#']},
+  cfb:{max:10,title:'Mystery Power 4 player',cols:['Team','Conf','Pos','Ht','Class','#']}
+};
+const EPOCH=Date.UTC(2026,10,6); // Nov 6, 2026 = puzzle #1
+
+let DATA=null, lg=store.get('lg','nfl'), md=store.get('md','daily'), game=null, sugIdx=-1, sugList=[];
+
+function norm(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[.'’\-]/g,'').replace(/\s+/g,' ').trim()}
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function dayNum(){const d=new Date();return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-EPOCH)/864e5)+1}
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function ageOf(b){const t=new Date(),d=new Date(b+'T12:00:00');let a=t.getFullYear()-d.getFullYear();if(t.getMonth()<d.getMonth()||(t.getMonth()===d.getMonth()&&t.getDate()<d.getDate()))a--;return a}
+function ft(h){return Math.floor(h/12)+"'"+(h%12)+'"'}
+
+function prep(raw){
+  const mk=(L,rows)=>rows.map((r,i)=>{
+    const p=L==='nfl'
+      ?{i,name:r[0],team:r[1],grp:r[2],pos:r[3],ht:r[4],birth:r[5],num:r[6],college:r[7],img:r[8]?(r[8].startsWith('http')?r[8]:'https://static.www.nfl.com/image/upload/f_auto,q_auto/league/'+r[8]):'',al:r[9],ans:r[10]}
+      :{i,name:r[0],team:r[1],grp:r[2],pos:r[3],ht:r[4],yr:r[5],num:r[6],eid:r[7],hs:r[8],al:r[9],ans:r[10],img:'https://a.espncdn.com/i/headshots/college-football/players/full/'+r[7]+'.png'};
+    p.key=L==='nfl'?r[11]:String(r[7]);
+    p.k=[p.name].concat(p.al?p.al.split('|'):[]).map(norm);
+    return p});
+  const nfl=mk('nfl',raw.nfl.p), cfb=mk('cfb',raw.cfb.p);
+  const school={};raw.cfb.teams.forEach(t=>school[t.t]=t.s);
+  // Same-name players get their team shown in the guess list.
+  for(const arr of [nfl,cfb]){const c={};arr.forEach(p=>c[p.k[0]]=(c[p.k[0]]||0)+1);arr.forEach(p=>p.dupe=c[p.k[0]]>1)}
+  return {nfl:{p:nfl,asof:raw.nfl.asof},cfb:{p:cfb,asof:raw.cfb.asof,school}};
+}
+
+function dailyAnswer(L){
+  const pool=DATA[L].p.filter(p=>p.ans===2).sort((a,b)=>hash(L+a.key)-hash(L+b.key)||(a.key<b.key?-1:1));
+  const n=dayNum();return pool[((n-1)%pool.length+pool.length)%pool.length];
+}
+function randomAnswer(L){
+  const recent=store.get('recent:'+L,[]);
+  let pool=DATA[L].p.filter(p=>p.ans>=1&&!recent.includes(p.key));
+  if(!pool.length)pool=DATA[L].p.filter(p=>p.ans>=1);
+  const a=pool[Math.floor(Math.random()*pool.length)];
+  store.set('recent:'+L,[a.key].concat(recent).slice(0,120));
+  return a;
+}
+function byKey(L,k){return DATA[L].p.find(p=>p.key===k)}
+
+function compare(L,g,a){
+  const near=(x,y)=>NEAR_POS[L].some(s=>s.includes(x)&&s.includes(y));
+  const num=(gv,av,tol,label)=>({v:label,c:gv===av?'hit':Math.abs(gv-av)<=tol?'near':'miss',ar:gv===av?'':av>gv?'↑':'↓'});
+  const out=[];
+  out.push({v:g.team,c:g.team===a.team?'hit':'miss'});
+  if(L==='nfl')out.push({v:g.grp.replace(' ','<br>'),c:g.grp===a.grp?'hit':g.grp.slice(0,3)===a.grp.slice(0,3)?'near':'miss',sm:1});
+  else out.push({v:g.grp==='Independent'?'IND':g.grp,c:g.grp===a.grp?'hit':'miss',sm:g.grp.length>4});
+  out.push({v:g.pos,c:g.pos===a.pos?'hit':near(g.pos,a.pos)?'near':'miss'});
+  out.push(num(g.ht,a.ht,2,ft(g.ht)));
+  if(L==='nfl'){const ga=ageOf(g.birth),aa=ageOf(a.birth);out.push(num(ga,aa,2,ga))}
+  else out.push(num(g.yr,a.yr,1,CLS[g.yr]));
+  out.push(num(g.num,a.num,2,g.num));
+  return out;
+}
+
+function stateKey(){return md==='daily'?'d:'+lg+':'+todayKey():'u:'+lg}
+function load(){
+  const L=lg, saved=store.get(stateKey(),null);
+  if(md==='daily'){
+    const a=dailyAnswer(L);
+    game={L,ans:a,guesses:[],done:false,won:false,day:dayNum()};
+    if(saved&&saved.ans===a.key){game.guesses=saved.g.map(k=>byKey(L,k)).filter(Boolean);game.done=saved.done;game.won=saved.won}
+  }else{
+    const a=saved&&byKey(L,saved.ans);
+    if(a&&!saved.done){game={L,ans:a,guesses:saved.g.map(k=>byKey(L,k)).filter(Boolean),done:false,won:false}}
+    else game={L,ans:randomAnswer(L),guesses:[],done:false,won:false};
+  }
+  save();render(false);
+}
+function save(){store.set(stateKey(),{ans:game.ans.key,g:game.guesses.map(p=>p.key),done:game.done,won:game.won})}
+
+function guess(p){
+  if(game.done||game.guesses.some(x=>x.key===p.key))return;
+  game.guesses.push(p);
+  const max=LG[game.L].max;
+  if(p.key===game.ans.key){game.done=true;game.won=true}
+  else if(game.guesses.length>=max){game.done=true}
+  if(game.done)record();
+  save();render(true);
+}
+function giveUp(){if(game.done)return;game.done=true;game.won=false;record();save();render(false)}
+function record(){
+  const k='stats:'+game.L+':'+md, s=store.get(k,{played:0,wins:0,streak:0,best:0,dist:{}});
+  if(md==='daily'){const last=store.get('lastday:'+game.L,0);if(last===game.day)return;store.set('lastday:'+game.L,game.day);
+    if(game.won){s.streak=(store.get('winday:'+game.L,0)===game.day-1)?s.streak+1:1;store.set('winday:'+game.L,game.day)}else s.streak=0}
+  else s.streak=game.won?s.streak+1:0;
+  s.played++;if(game.won){s.wins++;const n=game.guesses.length;s.dist[n]=(s.dist[n]||0)+1}
+  s.best=Math.max(s.best,s.streak);s.lastN=game.won?game.guesses.length:0;store.set(k,s);
+}
+
+function photo(p,cls){const ini=p.name.split(' ').filter(w=>/^[A-Z]/.test(w)).slice(0,2).map(w=>w[0]).join('');
+  return p.img?`<span class="${cls}"><img src="${esc(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.textContent='${esc(ini)}'"></span>`:`<span class="${cls}">${esc(ini)}</span>`}
+
+function row(p,anim){
+  const cells=compare(game.L,p,game.ans), win=p.key===game.ans.key;
+  return `<div class="guess${win?' win':''}"><div class="who">${photo(p,'av')}<span>${esc(p.name)}</span></div><div class="grow">`+
+    cells.map((c,i)=>`<div class="tile ${c.c}${anim?' flip':''}" style="${anim?`animation-delay:${i*90}ms`:''}" aria-label="${esc(LG[game.L].cols[i])}: ${String(c.v).replace('<br>',' ')}${c.ar?(c.ar==='↑'?', answer is higher':', answer is lower'):''}, ${c.c==='hit'?'correct':c.c==='near'?'close':'no'}">${c.sm?`<small>${c.v}</small>`:esc(c.v)}${c.ar?`<span class="ar">${c.ar}</span>`:''}</div>`).join('')+`</div></div>`;
+}
+
+function render(anim){
+  const L=game.L, cfg=LG[L], n=game.guesses.length;
+  document.querySelectorAll('[data-lg]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lg===lg));
+  document.querySelectorAll('[data-md]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.md===md));
+  $('#tTitle').textContent=cfg.title;
+  $('#tSub').textContent=md==='daily'?`Daily #${game.day} · ${new Date().toLocaleDateString(undefined,{month:'long',day:'numeric'})}`:'Unlimited · new player every game';
+  $('#foot').textContent=L==='nfl'?`Current NFL rosters as of ${fmtDate(DATA.nfl.asof)}. Age is today's age.`:`2026 Power 4 rosters (SEC, Big Ten, Big 12, ACC and Notre Dame) as of ${fmtDate(DATA.cfb.asof)}.`;
+  let h='';
+  if(!game.done){
+    h+=`<div class="search"><svg class="mg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="text" placeholder="Guess a player" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="go" aria-label="Guess a player" role="combobox" aria-expanded="false" aria-controls="sug"><div class="sug" id="sug" role="listbox" hidden></div></div>`;
+    h+=`<div class="count">Guess ${Math.min(n+1,cfg.max)} of ${cfg.max}<span class="dots">${Array.from({length:cfg.max},(_,i)=>`<i class="${i<n?'u':''}"></i>`).join('')}</span></div>`;
+  }else h+=endCard();
+  h+=`<div class="head">${cfg.cols.map(c=>`<div>${c}</div>`).join('')}</div>`;
+  if(!n)h+=`<div class="empty">Type any ${L==='nfl'?'current NFL':'Power 4'} player to start. Each guess shows how close you are.</div>`;
+  h+=game.guesses.slice().reverse().map((p,i)=>row(p,anim&&i===0)).join('');
+  if(!game.done&&md==='unl'&&n)h+=`<button class="giveup" id="gu">Give up and show the player</button>`;
+  h+=`<div class="key"><span><i style="background:var(--hit)"></i>Match</span><span><i style="background:var(--near)"></i>Close</span><span><i style="background:var(--miss)"></i>No</span><span>↑ ↓ answer is higher / lower</span></div>`;
+  $('#app').innerHTML=h;
+  if(!game.done){const q=$('#q');q.addEventListener('input',suggest);q.addEventListener('keydown',keys);q.addEventListener('blur',()=>setTimeout(()=>{if(document.activeElement!==q)hideSug()},150));if(matchMedia('(hover:hover)').matches&&$('#ov').hidden)q.focus()}
+  const gu=$('#gu');if(gu)gu.onclick=()=>{if(confirm('Give up and see the answer?'))giveUp()};
+  const nb=$('#nb');if(nb)nb.onclick=()=>{store.set(stateKey(),null);load()};
+  const sb=$('#sb');if(sb)sb.onclick=share;
+  const st=$('#st');if(st)st.onclick=showStats;
+  if(game.done&&md==='daily')tick();
+}
+function fmtDate(s){const d=new Date(s+'T12:00:00');return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}
+
+function endCard(){
+  const a=game.ans, L=game.L, n=game.guesses.length;
+  const line=L==='nfl'
+    ?`${NFL_TEAMS[a.team]||a.team} · ${POS_NAME[a.pos]||a.pos} · #${a.num}`
+    :`${DATA.cfb.school[a.team]||a.team} · ${POS_NAME[a.pos]||a.pos} · #${a.num}`;
+  const line2=L==='nfl'
+    ?`${ft(a.ht)} · ${ageOf(a.birth)} years old${a.college?' · '+esc(a.college):''}`
+    :`${ft(a.ht)} · ${['','Freshman','Sophomore','Junior','Senior'][a.yr]}${a.hs?' · from '+esc(STATES[a.hs]||a.hs):''}`;
+  return `<div class="end"><h2>${game.won?(n===1?'First try. Unreal.':`Got it in ${n}!`):'Not this time'}</h2><p class="sub">${game.won?'You found the mystery player.':'The mystery player was:'}</p>
+    <div class="reveal">${photo(a,'ph')}<div><b>${esc(a.name)}</b><span>${esc(line)}</span><span>${line2}</span></div></div>
+    <div class="btns">${md==='unl'?'<button class="btn" id="nb">Play again</button>':''}<button class="btn${md==='unl'?' ghost':''}" id="sb">Share</button><button class="btn ghost" id="st">Stats</button></div>
+    ${md==='daily'?`<p class="next" id="next"></p>`:''}</div>`;
+}
+let tickT=0;
+function tick(){clearTimeout(tickT);const el=$('#next');if(!el)return;const now=new Date(),m=new Date(now);m.setHours(24,0,0,0);
+  if(md==='daily'&&game.day!==dayNum()){load();return}
+  const s=Math.max(0,Math.floor((m-now)/1000));el.textContent=`Next player in ${Math.floor(s/3600)}h ${String(Math.floor(s%3600/60)).padStart(2,'0')}m · or try Unlimited`;tickT=setTimeout(tick,30000)}
+
+function shareText(){
+  const L=game.L, n=game.guesses.length, max=LG[L].max;
+  const em={hit:'🟩',near:'🟨',miss:'⬜'};
+  const rows=game.guesses.map(p=>compare(L,p,game.ans).map(c=>em[c.c]).join(''));
+  const head=`Huddle ${L==='nfl'?'NFL':'College'} ${md==='daily'?'#'+game.day:'Unlimited'} ${game.won?n:'X'}/${max}`;
+  return head+'\n'+rows.join('\n')+'\n'+location.origin+location.pathname;
+}
+async function share(){
+  const t=shareText();
+  if(navigator.share&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({text:t});return}catch(e){if(e.name==='AbortError')return}}
+  try{await navigator.clipboard.writeText(t);toast('Copied. Paste it in your group chat')}catch(e){prompt('Copy your result:',t)}
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2200)}
+
+function suggest(){
+  const q=norm($('#q').value), box=$('#sug');
+  if(!q){hideSug();return}
+  const words=q.split(' '), used=new Set(game.guesses.map(p=>p.key));
+  const scored=[];
+  for(const p of DATA[game.L].p){
+    if(used.has(p.key))continue;
+    let best=-1;
+    for(const k of p.k){
+      const toks=k.split(' ');
+      const glued=!words.every(w=>toks.some(t=>t.startsWith(w)));
+      if(glued&&!k.replace(/ /g,'').includes(q.replace(/ /g,'')))continue;
+      const s=glued?3:k.startsWith(q)?0:toks.some(t=>t.startsWith(words[0]))&&toks[toks.length-1].startsWith(words[words.length-1])?1:2;
+      if(best<0||s<best)best=s;
+    }
+    if(best>=0)scored.push([best,p]);
+  }
+  scored.sort((a,b)=>a[0]-b[0]||a[1].name.localeCompare(b[1].name));
+  sugList=scored.slice(0,40).map(x=>x[1]);sugIdx=sugList.length?0:-1;
+  box.innerHTML=sugList.length?sugList.map((p,i)=>`<button type="button" role="option" data-i="${i}" class="${i===0?'on':''}"><b>${esc(p.name)}</b><span>${esc(p.team)} · ${esc(p.pos)}</span></button>`).join(''):`<div class="none">No ${game.L==='nfl'?'current NFL':'Power 4'} player matches “${esc($('#q').value)}”.</div>`;
+  box.hidden=false;$('#q').setAttribute('aria-expanded','true');
+  box.querySelectorAll('button').forEach(b=>b.addEventListener('mousedown',e=>{e.preventDefault();pick(+b.dataset.i)}));
+}
+function hideSug(){const b=$('#sug');if(b){b.hidden=true;$('#q')&&$('#q').setAttribute('aria-expanded','false')}}
+function keys(e){
+  const box=$('#sug');if(box.hidden)return;
+  const bs=box.querySelectorAll('button');
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!bs.length)return;sugIdx=(sugIdx+(e.key==='ArrowDown'?1:-1)+bs.length)%bs.length;bs.forEach((b,i)=>b.classList.toggle('on',i===sugIdx));bs[sugIdx].scrollIntoView({block:'nearest'})}
+  else if(e.key==='Enter'){e.preventDefault();if(sugIdx>=0)pick(sugIdx)}
+  else if(e.key==='Escape')hideSug();
+}
+function pick(i){const p=sugList[i];if(p)guess(p)}
+
+function sheet(html){$('#sheet').innerHTML='<button class="x" aria-label="Close">×</button>'+html;$('#ov').hidden=false;$('#sheet .x').onclick=closeSheet}
+function closeSheet(){$('#ov').hidden=true}
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')closeSheet()});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov').hidden)closeSheet()});
+function showHelp(){
+  const t=(c,v,a)=>`<div class="tile ${c}">${v}${a?`<span class="ar">${a}</span>`:''}</div>`;
+  sheet(`<h2>How to play</h2>
+  <p>Guess the mystery player. NFL gives you <b>8 guesses</b>, College gives you <b>10</b>. After each guess the tiles show how close you are.</p>
+  <div class="ex">${t('hit','KC')}${t('near','<small>AFC<br>North</small>')}${t('miss','6\'2"','↑')}</div>
+  <ul><li><b>Green</b>: exact match.</li><li><b>Yellow</b>: close. Same conference but a different division; a neighboring position (DE and DT, DE and LB, CB and S, any two offensive linemen); or height, age or number within 2 (class within 1 year).</li><li><b>Gray</b>: not a match.</li><li><b>↑ ↓</b>: the mystery player's height, age, class or number is higher or lower.</li></ul>
+  <h3>NFL</h3><p>Any player on a current NFL roster (active or injured reserve; not the practice squad). Answers come from the league's well-known players. Age is the player's age today.</p>
+  <h3>College</h3><p>Any player on a 2026 Power 4 roster: SEC, Big Ten, Big 12, ACC, plus Notre Dame. Answers are this season's main contributors. Positions use one scale for every school (OL, DL, LB, DB…), and class is the roster year (FR, SO, JR, SR).</p>
+  <h3>Daily and Unlimited</h3><p>Daily is the same player for everyone, with a new one at midnight. Unlimited lets you keep playing.</p>`);
+}
+function showStats(){
+  const k='stats:'+lg+':'+md, s=store.get(k,{played:0,wins:0,streak:0,best:0,dist:{}}), max=LG[lg].max;
+  const top=Math.max(1,...Object.values(s.dist));
+  sheet(`<h2>${lg==='nfl'?'NFL':'College'} ${md==='daily'?'Daily':'Unlimited'} stats</h2>
+  <div class="stats4"><div><b>${s.played}</b><span>Played</span></div><div><b>${s.played?Math.round(s.wins/s.played*100):0}</b><span>Win %</span></div><div><b>${s.streak}</b><span>Streak</span></div><div><b>${s.best}</b><span>Best</span></div></div>
+  <h3>Guesses to win</h3><div class="dist">${Array.from({length:max},(_,i)=>{const v=s.dist[i+1]||0;return `<div>${i+1}<i class="${game&&game.done&&game.won&&game.L===lg&&game.guesses.length===i+1?'cur':''}" style="width:${Math.max(7,v/top*100)}%">${v}</i></div>`}).join('')}</div>`);
+}
+$('#bHelp').onclick=showHelp;$('#bStats').onclick=showStats;
+document.querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>{lg=b.dataset.lg;store.set('lg',lg);load()});
+document.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>{md=b.dataset.md;store.set('md',md);load()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&game&&md==='daily'&&game.day!==dayNum())load()});
+
+fetch('data.json').then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(raw=>{
+  DATA=prep(raw);load();
+  if(!store.get('seenHelp',false)){store.set('seenHelp',true);showHelp()}
+}).catch(e=>{$('#app').innerHTML='<div class="load">Couldn’t load the players. Check your connection and reload.</div>'});
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/games/sw.js',{scope:'/games/'}));
+</script>
