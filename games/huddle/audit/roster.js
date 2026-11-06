@@ -23,7 +23,7 @@ const ours=D.cfb.p.filter(x=>x[1]===TEAM); const by={}; off.forEach(o=>{by[nm(o.
 const upd=[], miss=[]; const used=new Set();
 for(const x of ours){let o=by[nm(x[0])]||(x[9]?x[9].split('|').map(a=>by[nm(a)]).find(Boolean):null)||by['L'+nm(x[0].split(' ').slice(1).join(''))+'|'+x[6]];
  if(!o){miss.push(x[7]);continue} used.add(o); const u=[];
- if(o.j!=null&&o.j!==x[6])u.push('j'+o.j); if(o.h&&o.h!==x[4])u.push('h'+o.h); if(o.c&&o.c!==x[5])u.push('c'+o.c); if(o.n!==x[0])u.push('n'+o.n+'^');
+ if(o.j!=null&&o.j!==x[6])u.push('j'+o.j); if(o.h&&o.h!==x[4])u.push('h'+o.h); if(o.c&&o.c!==x[5])u.push('c'+o.c); if(o.n!==x[0]&&o.n!==o.n.toUpperCase())u.push('n'+o.n+'^');
  if(u.length)upd.push(x[7]+':'+u.join(''));}
 const extra=off.filter(o=>!used.has(o)).map(o=>[o.j,o.n,o.p,o.c,o.h].join('|'));
 return TEAM+' '+how+' off'+off.length+' ours'+ours.length+'\nM '+miss.join(',')+'\nU '+upd.join(';')+'\nX '+extra.join(';');})
